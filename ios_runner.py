@@ -94,7 +94,7 @@ class iOSRunner:
 
         # smoothen control
         # TODO optimize this smoothening
-        self.should_smoothen_control = True
+        self.should_smoothen_control = False
         self.prev_control = VehicleControl()
         self.steering_smoothen_factor_forward = 100
         self.steering_smoothen_factor_backward = 10
@@ -147,7 +147,7 @@ class iOSRunner:
                                            self.ios_config.max_steering)
                 if self.should_smoothen_control:
                     self.smoothen_control(control)
-                # self.control_streamer.send(control)
+                self.control_streamer.send(control)
 
         except Exception as e:
             self.logger.error(f"Something bad happend {e}")
@@ -199,6 +199,7 @@ class iOSRunner:
             vehicle.velocity.x = (((self.agent.vehicle.transform.location.x - vehicle.transform.location.x) / diff) + vehicle.velocity.x*10) / 11
             vehicle.velocity.y = (((self.agent.vehicle.transform.location.y - vehicle.transform.location.y) / diff) + vehicle.velocity.y*10) / 11
             vehicle.velocity.z = (((self.agent.vehicle.transform.location.z - vehicle.transform.location.z) / diff) + vehicle.velocity.z*10) / 11
+            vehicle.control = self.control_streamer.control_tx
             self.last_control_time = current_time
 
             if self.ios_config.ar_mode is False:

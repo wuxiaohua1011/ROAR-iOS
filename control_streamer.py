@@ -11,6 +11,7 @@ class ControlStreamer(Module):
     def save(self, **kwargs):
         # no need to save. use Agent's saving mechanism
         pass
+
     def __init__(self, host: str, port: int, name: str = "transform",
                  threaded: bool = True):
         super().__init__(threaded=threaded, name=name)
