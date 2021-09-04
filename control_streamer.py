@@ -4,6 +4,7 @@ from ROAR.utilities_module.vehicle_models import VehicleControl
 from typing import Optional, List
 from pathlib import Path
 from websocket import create_connection
+import websocket
 import requests
 
 
@@ -20,15 +21,17 @@ class ControlStreamer(Module):
         self.port = port
         self.control_rx: VehicleControl = VehicleControl()
         self.control_tx: VehicleControl = VehicleControl()
-        self.ws_tx = None
+        self.ws_tx = websocket.WebSocket()
         self.ws_rx = None
         self.logger.info(f"{name} initialized")
+
+    def connect(self):
+        self.ws_tx.connect(f"ws://{self.host}:{self.port}/{self.name}_rx", timeout=0.1)
 
     def send(self, vehicle_control: VehicleControl):
         try:
             self.control_tx = vehicle_control
-            self.ws_tx = create_connection(f"ws://{self.host}:{self.port}/{self.name}_rx", timeout=0.1)
-            self.ws_tx.send(f"{vehicle_control.throttle},{vehicle_control.steering}")
+            self.ws_tx.send(f"{self.control_tx.throttle},{self.control_tx.steering}")
         except Exception as e:
             self.logger.error(e)
 

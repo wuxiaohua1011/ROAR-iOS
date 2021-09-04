@@ -116,10 +116,15 @@ class iOSRunner:
 
     def start_game_loop(self, auto_pilot=False):
         self.logger.info("Starting Game loop")
+        self.world_cam_streamer.connect()
+        self.control_streamer.connect()
         self.agent.add_threaded_module(self.world_cam_streamer)
         if self.ios_config.ar_mode:
+            self.face_cam_streamer.connect()
             self.agent.add_threaded_module(self.face_cam_streamer)
         else:
+            self.depth_cam_streamer.connect()
+            self.transform_streamer.connect()
             self.agent.add_threaded_module(self.depth_cam_streamer)
             self.agent.add_threaded_module(self.transform_streamer)
 

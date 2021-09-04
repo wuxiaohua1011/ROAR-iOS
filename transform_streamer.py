@@ -3,7 +3,7 @@ from ROAR.utilities_module.module import Module
 from ROAR.utilities_module.data_structures_models import Transform
 from typing import Optional, List
 from pathlib import Path
-from websocket import create_connection
+from websocket import WebSocket
 
 
 class TransformStreamer(Module):
@@ -18,12 +18,14 @@ class TransformStreamer(Module):
         self.host = host
         self.port = port
         self.transform: Transform = Transform()
-        self.ws = None
+        self.ws = WebSocket()
         self.logger.info(f"{name} initialized")
+
+    def connect(self):
+        self.ws.connect(f"ws://{self.host}:{self.port}/{self.name}", timeout=0.1)
 
     def receive(self):
         try:
-            self.ws = create_connection(f"ws://{self.host}:{self.port}/{self.name}", timeout=0.1)
             result: bytes = self.ws.recv()
             try:
                 self.transform = Transform.fromBytes(result)

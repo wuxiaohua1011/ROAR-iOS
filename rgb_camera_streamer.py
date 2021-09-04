@@ -1,5 +1,5 @@
 import logging
-from websocket import create_connection
+import websocket
 from typing import List, Optional, Tuple, List
 import cv2
 import numpy as np
@@ -21,16 +21,18 @@ class RGBCamStreamer(Module):
         self.logger = logging.getLogger(f"{self.name} server on [{host}:{port}]")
         self.host = host
         self.port = port
-        self.ws = None
+        self.ws = websocket.WebSocket()
         self.intrinsics: Optional[np.ndarray] = None
         self.resize = resize
 
         self.curr_image: Optional[np.ndarray] = None
         self.logger.info(f"{name} initialized")
 
+    def connect(self):
+        self.ws.connect(f"ws://{self.host}:{self.port}/{self.name}", timeout=0.1)
+
     def receive(self):
         try:
-            self.ws = create_connection(f"ws://{self.host}:{self.port}/{self.name}", timeout=0.1)
             img = self.ws.recv()
             intrinsics_str = self.ws.recv()
             try:
