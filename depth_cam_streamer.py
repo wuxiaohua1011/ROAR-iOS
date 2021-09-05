@@ -31,8 +31,12 @@ class DepthCamStreamer(Module):
         self.logger.info(f"{name} initialized")
 
     def connect(self):
-        self.ws.connect(f"ws://{self.host}:{self.port}/{self.name}", timeout=0.1)
+        for i in range(10):
+            try:
+                self.ws.connect(f"ws://{self.host}:{self.port}/{self.name}", timeout=0.1)
 
+            except Exception as e:
+                self.logger.error(e)
     def receive(self):
         try:
             im = self.ws.recv()

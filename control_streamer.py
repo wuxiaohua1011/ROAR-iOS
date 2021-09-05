@@ -26,8 +26,11 @@ class ControlStreamer(Module):
         self.logger.info(f"{name} initialized")
 
     def connect(self):
-        self.ws_tx.connect(f"ws://{self.host}:{self.port}/{self.name}_rx", timeout=0.1)
-
+        for i in range(10):
+            try:
+                self.ws_tx.connect(f"ws://{self.host}:{self.port}/{self.name}_rx", timeout=0.1)
+            except Exception as e:
+                self.logger.error(e)
     def send(self, vehicle_control: VehicleControl):
         try:
             self.control_tx = vehicle_control

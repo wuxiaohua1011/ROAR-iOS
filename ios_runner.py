@@ -45,7 +45,8 @@ class iOSRunner:
                                                 name=self.ios_config.face_cam_route_name,
                                                 resize=(self.pygame_display_height,
                                                         self.pygame_display_width),
-                                                update_interval=0.025
+                                                update_interval=0.025,
+                                                has_intrinsics=False
                                                 )
         self.depth_cam_streamer = DepthCamStreamer(host=self.ios_config.ios_ip_addr,
                                                    port=self.ios_config.ios_port,
