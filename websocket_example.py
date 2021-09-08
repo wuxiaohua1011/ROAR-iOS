@@ -24,7 +24,7 @@ if __name__ == "__main__":
     host = "192.168.1.15"
     port = 8005
     websocket.enableTrace(False)
-    ws = websocket.WebSocketApp(f"ws://{host}:{port}/transform",
+    ws = websocket.WebSocketApp(f"ws://{host}:{port}/transform_2",
                                 on_open=on_open,
                                 on_message=on_message,
                                 on_error=on_error,
