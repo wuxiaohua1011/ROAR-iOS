@@ -15,8 +15,10 @@ def on_close(ws, close_status_code, close_msg):
     print("### closed ###")
 
 
-def on_open(ws):
-    print("ws opened")
+def on_open(ws:websocket.WebSocket):
+    while True:
+        ws.send(f"{0.5},{0}")
+        time.sleep(0.5)
 
 
 if __name__ == "__main__":
@@ -24,7 +26,7 @@ if __name__ == "__main__":
     host = "192.168.1.15"
     port = 8005
     websocket.enableTrace(False)
-    ws = websocket.WebSocketApp(f"ws://{host}:{port}/transform_2",
+    ws = websocket.WebSocketApp(f"ws://{host}:{port}/control_rx",
                                 on_open=on_open,
                                 on_message=on_message,
                                 on_error=on_error,
