@@ -13,7 +13,7 @@ class ControlStreamer(Module):
         # no need to save. use Agent's saving mechanism
         pass
 
-    def __init__(self, host: str, port: int, name: str = "transform",
+    def __init__(self, host: str, port: int, name: str = "control",
                  threaded: bool = True):
         super().__init__(threaded=threaded, name=name)
         self.logger = logging.getLogger(f"{self.name} server [{host}:{port}]")

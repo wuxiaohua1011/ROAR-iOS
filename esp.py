@@ -5,22 +5,23 @@ import websocket
 import requests
 import time
 
-
 def main(host):
     ws = websocket.WebSocket()
     # ws.connect(f"ws://{host}:81/ws")
-    url = f'http://{host}/cam-lo.jpg'
-
+    # url = f'http://{host}/cam-lo.jpg'
+    ws.connect("ws://192.168.1.12:8005/control_rx")
     while True:
-        imgResp = urllib.request.urlopen(url)
-        imgNp = np.array(bytearray(imgResp.read()), dtype=np.uint8)
-        img = cv2.imdecode(imgNp, -1)
+
+        # imgResp = urllib.request.urlopen(url)
+        # imgNp = np.array(bytearray(imgResp.read()), dtype=np.uint8)
+        # img = cv2.imdecode(imgNp, -1)
 
         # all the opencv processing is done here
-        cv2.imshow('test', img)
-        if ord('q') == cv2.waitKey(1):
-            exit(0)
-        # ws.send("(1500,1500)")
+        # cv2.imshow('test', img)
+        # if ord('q') == cv2.waitKey(1):
+        #     exit(0)
+        # ws.send("(1,1)")
+        ws.send("1,0.523")
         time.sleep(0.025)
 
 
