@@ -83,7 +83,7 @@ void setup()
     while (1);
   }
   
-  BLE.setLocalName("IR Vehicle Control Unit Michael");
+  BLE.setLocalName("IR Vehicle Control Unit");
   BLE.setAdvertisedService(vehicleControlService);
   vehicleControlService.addCharacteristic(vehicleControlCharacteristic);
   BLE.addService(vehicleControlService);
@@ -293,6 +293,7 @@ void writeToServo(unsigned int throttle, unsigned int steering) {
   checkServo();
   latest_throttle = throttle;
   latest_steering = steering;
+
   servoThrottle.writeMicroseconds(latest_throttle);
   servoSteering.writeMicroseconds(latest_steering);
   writeToSerial(latest_throttle, latest_steering);
@@ -316,7 +317,7 @@ void read_controller() {
 
   if(bUpdateFlagsShared)
   {
-    noInterrupts(); 
+    noInterrupts();
     bUpdateFlags = bUpdateFlagsShared;
     if(bUpdateFlags & THROTTLE_FLAG)
     {
@@ -327,9 +328,9 @@ void read_controller() {
       unSteeringIn = unSteeringInShared;
     }
     bUpdateFlagsShared = 0;
-    interrupts(); 
+    interrupts();
   }
- 
+
   if(bUpdateFlags & THROTTLE_FLAG)
   {
     if(servoThrottle.readMicroseconds() != unThrottleIn)
@@ -338,7 +339,7 @@ void read_controller() {
       controller_throttle_read = (unThrottleIn + prev_controller_throttle_read * cum) / (cum+1);
     }
   }
- 
+
   if(bUpdateFlags & STEERING_FLAG)
   {
     if(servoSteering.readMicroseconds() != unSteeringIn)
@@ -350,8 +351,8 @@ void read_controller() {
 //      Serial.println("HERE");
     }
   }
-  
- 
+
+
   bUpdateFlags = 0;
 }
 
@@ -407,7 +408,7 @@ void vehicleControllerCharacteristicWritten(BLEDevice central, BLECharacteristic
       unsigned int curr_throttle_read = atoi(token + 1);
       if (curr_throttle_read >= 1000 and curr_throttle_read <= 2000) {
         bluetooth_throttle_read = curr_throttle_read;
-      } 
+      }
     }
     token = strtok(NULL, ",");
     if (token != NULL) {
@@ -416,5 +417,5 @@ void vehicleControllerCharacteristicWritten(BLEDevice central, BLECharacteristic
         bluetooth_steering_read = curr_steering_read;
       }
     }
-  } 
+  }
 }
