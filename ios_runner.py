@@ -206,7 +206,8 @@ class iOSRunner:
             self.last_control_time = current_time
 
             if self.ios_config.ar_mode is False:
-                self.agent.front_depth_camera.intrinsics_matrix = self.depth_cam_streamer.intrinsics
+                self.agent.front_depth_camera.intrinsics_matrix = self.depth_cam_streamer.intrinsics @ self.agent.front_depth_camera.intrinsics_transformation
+
             return sensor_data, vehicle
         except Exception as e:
             self.logger.error(f"Cannot convert data: {e}")
