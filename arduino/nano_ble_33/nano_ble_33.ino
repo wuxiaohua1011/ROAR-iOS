@@ -82,8 +82,8 @@ void setup()
     Serial.println("starting BLE failed!");
     while (1);
   }
-  
-  BLE.setLocalName("IR Vehicle Control Unit");
+
+  BLE.setLocalName("IR Vehicle Control Unit Michael");
   BLE.setAdvertisedService(vehicleControlService);
   vehicleControlService.addCharacteristic(vehicleControlCharacteristic);
   BLE.addService(vehicleControlService);
@@ -94,9 +94,9 @@ void setup()
 
   // assign event handlers for characteristic
   vehicleControlCharacteristic.setEventHandler(BLEWritten, vehicleControllerCharacteristicWritten);
-  
+
   BLE.advertise();
-//  
+//
 //  while(!Serial);
 //  Serial.println("Bluetooth device active, waiting for connections...");
 }
@@ -120,7 +120,7 @@ void loop()
     blinkLED();
   } else {
     turnOnLED();
-  } 
+  }
   Serial.print(rc_controller_state);
   Serial.print(jetson_controller_state);
   Serial.print(bluetooth_controller_state);
@@ -138,8 +138,7 @@ void loop()
     latest_throttle = NEUTRAL_THROTTLE;
     latest_steering = NEUTRAL_STEERING;
   }
-  
-//  latest_throttle = 1600;
+
   ensureSmoothBackTransition();
   writeToServo(latest_throttle, latest_steering);
 }
@@ -162,7 +161,7 @@ void ensureSmoothBackTransition() {
       writeToServo(1500,latest_steering);
     } // stop
     isForwardState = false;
-  } else if (latest_throttle > 1520) {
+  } else if (latest_throttle >= 1500) {
     isForwardState = true;
   }
 }
@@ -183,7 +182,7 @@ void blinkLED() {
     // if the LED is off turn it on and vice-versa:
     if (ledState == LOW) {
       ledState = HIGH;
-      
+
     } else {
       ledState = LOW;
     }
@@ -212,7 +211,7 @@ void parseSerialData() {
             unsigned int curr_throttle_read = atoi(token + 1);
             if (curr_throttle_read >= 1000 and curr_throttle_read <= 2000) {
               latest_throttle = curr_throttle_read;
-            } 
+            }
           }
           token = strtok(NULL, ",");
           if (token != NULL) {
@@ -221,7 +220,7 @@ void parseSerialData() {
               latest_steering = curr_steering_read;
             }
           }
-        } 
+        }
     } while(Serial.available() > 0);
 }
 bool determineJetsonControllerConnected() {
@@ -245,7 +244,7 @@ bool detectControllerState2() {
   /*
    * if controller throttle and steering has not been changing (~5 pwm) for 5 secods --> controller is disconnected
    * else, controller is connected
-   * 
+   *
    */
   detectControllerState2Helper();
   if (is_controller_values_changing_now) {

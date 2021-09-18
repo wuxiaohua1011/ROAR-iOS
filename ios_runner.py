@@ -14,8 +14,6 @@ from ROAR_iOS.transform_streamer import TransformStreamer
 from ROAR_iOS.control_streamer import ControlStreamer
 import numpy as np
 import cv2
-import qrcode
-from ROAR.utilities_module.utilities import get_ip
 import time
 
 
@@ -29,8 +27,7 @@ class iOSRunner:
         self.logger = logging.getLogger("iOS Runner")
         self.display: Optional[pygame.display] = None
         self.should_display_system_status = self.ios_config.should_display_system_status
-        self.controller = ManualControl(max_throttle=self.ios_config.max_throttle,
-                                        max_steering=self.ios_config.max_steering)
+        self.controller = ManualControl(ios_config=ios_config)
 
         self.setup_pygame()
         self.world_cam_streamer = RGBCamStreamer(host=self.ios_config.ios_ip_addr,

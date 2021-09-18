@@ -4,17 +4,18 @@ import pygame
 from ROAR.utilities_module.vehicle_models import VehicleControl
 import numpy as np
 from typing import Tuple
-
+from ROAR_iOS.config_model import iOSConfig
 
 class ManualControl:
-    def __init__(self, throttle_increment=0.05, steering_increment=0.05, max_throttle=1, max_steering=1):
+    def __init__(self, throttle_increment=0.05, steering_increment=0.05,
+                 ios_config:iOSConfig = iOSConfig):
         self.logger = logging.getLogger(__name__)
         self._steering_increment = steering_increment
         self._throttle_increment = throttle_increment
-        self.max_throttle = max_throttle
-        self.max_steering = max_steering
+        self.max_throttle = ios_config.max_throttle
+        self.max_steering = ios_config.max_steering
 
-        self.steering_offset = 0
+        self.steering_offset = ios_config.steering_offset
 
         self.gear_throttle_step = 0.05
         self.gear_steering_step = 0.05

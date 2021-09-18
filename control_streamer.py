@@ -36,6 +36,7 @@ class ControlStreamer(Module):
         try:
             self.control_tx = vehicle_control
             self.ws_tx.send(f"{self.control_tx.throttle},{self.control_tx.steering}")
+            # self.logger.info(self.control_tx)
         except Exception as e:
             self.logger.error(e)
 
