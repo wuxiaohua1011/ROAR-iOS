@@ -199,9 +199,9 @@ class iOSRunner:
             )
             current_time = time.time()
             diff = current_time - self.last_control_time
-            vehicle.velocity.x = (((self.agent.vehicle.transform.location.x - vehicle.transform.location.x) / diff) + vehicle.velocity.x*10) / 11
-            vehicle.velocity.y = (((self.agent.vehicle.transform.location.y - vehicle.transform.location.y) / diff) + vehicle.velocity.y*10) / 11
-            vehicle.velocity.z = (((self.agent.vehicle.transform.location.z - vehicle.transform.location.z) / diff) + vehicle.velocity.z*10) / 11
+            vehicle.velocity.x = (((self.agent.vehicle.transform.location.x - vehicle.transform.location.x) / diff) + vehicle.velocity.x*5) / 6
+            vehicle.velocity.y = (((self.agent.vehicle.transform.location.y - vehicle.transform.location.y) / diff) + vehicle.velocity.y*5) / 6
+            vehicle.velocity.z = (((self.agent.vehicle.transform.location.z - vehicle.transform.location.z) / diff) + vehicle.velocity.z*5) / 6
             vehicle.control = self.control_streamer.control_tx
             self.last_control_time = current_time
 
