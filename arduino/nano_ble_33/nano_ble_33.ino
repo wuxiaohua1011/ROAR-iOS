@@ -150,16 +150,22 @@ uint16_t read_rc_controller(int pin){
 
 
 void ensureSmoothBackTransition() {
-  if (isForwardState and latest_throttle < 1480) {
-    for (int i = 0; i <= 150; i++) {
-      writeToServo(1500, latest_steering);
-    }// stop
-    for (int i = 0; i <= 150; i++) {
-      writeToServo(1000, latest_steering);
-    } // backward
-    for (int i = 0; i <= 150; i++) {
-      writeToServo(1500,latest_steering);
-    } // stop
+  if (isForwardState and latest_throttle < 1500) {
+    writeToServo(1500, latest_steering);
+    delay(100);
+    writeToServo(1000, latest_steering);
+    delay(100);
+    writeToServo(1500,latest_steering);
+    delay(100);
+//    for (int i = 0; i <= 200; i++) {
+//      writeToServo(1500, latest_steering);
+//    }// stop
+//    for (int i = 0; i <= 100; i++) {
+//      writeToServo(1000, latest_steering);
+//    } // backward
+//    for (int i = 0; i <= 200; i++) {
+//      writeToServo(1500,latest_steering);
+//    } // stop
     isForwardState = false;
   } else if (latest_throttle >= 1500) {
     isForwardState = true;
@@ -417,4 +423,3 @@ void vehicleControllerCharacteristicWritten(BLEDevice central, BLECharacteristic
       }
     }
   }
-}
