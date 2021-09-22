@@ -83,7 +83,7 @@ void setup()
     while (1);
   }
 
-  BLE.setLocalName("IR Vehicle Control Unit Michael");
+  BLE.setLocalName("IR Vehicle Control Unit");
   BLE.setAdvertisedService(vehicleControlService);
   vehicleControlService.addCharacteristic(vehicleControlCharacteristic);
   BLE.addService(vehicleControlService);
@@ -96,18 +96,11 @@ void setup()
   vehicleControlCharacteristic.setEventHandler(BLEWritten, vehicleControllerCharacteristicWritten);
 
   BLE.advertise();
-//
-//  while(!Serial);
-//  Serial.println("Bluetooth device active, waiting for connections...");
+  Serial.println("Bluetooth device active, waiting for connections...");
 }
 
 void loop()
 {
-//  digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
-//  delay(250);                       // wait for a second
-//  digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
-//  delay(250);                       // wait for a second
-//  Serial.println("HERE");
   checkServo();
   BLE.poll();
   read_controller();
@@ -157,15 +150,6 @@ void ensureSmoothBackTransition() {
     delay(100);
     writeToServo(1500,latest_steering);
     delay(100);
-//    for (int i = 0; i <= 200; i++) {
-//      writeToServo(1500, latest_steering);
-//    }// stop
-//    for (int i = 0; i <= 100; i++) {
-//      writeToServo(1000, latest_steering);
-//    } // backward
-//    for (int i = 0; i <= 200; i++) {
-//      writeToServo(1500,latest_steering);
-//    } // stop
     isForwardState = false;
   } else if (latest_throttle >= 1500) {
     isForwardState = true;
@@ -400,6 +384,10 @@ void blePeripheralDisconnectHandler(BLEDevice central) {
   Serial.print("Disconnected event, central: ");
   Serial.println(central.address());
   is_bluetooth_connected = false;
+  latest_throttle = 1500;
+  latest_steering = 1500;
+  bluetooth_throttle_read = 1500;
+  bluetooth_steering_read = 1500;
 }
 
 void vehicleControllerCharacteristicWritten(BLEDevice central, BLECharacteristic characteristic) {
