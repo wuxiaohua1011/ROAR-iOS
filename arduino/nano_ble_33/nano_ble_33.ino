@@ -423,3 +423,4 @@ void vehicleControllerCharacteristicWritten(BLEDevice central, BLECharacteristic
       }
     }
   }
+}
