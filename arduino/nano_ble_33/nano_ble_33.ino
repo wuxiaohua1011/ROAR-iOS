@@ -377,6 +377,10 @@ void blePeripheralConnectHandler(BLEDevice central) {
   Serial.print("Connected event, central: ");
   Serial.println(central.address());
   is_bluetooth_connected = true;
+  latest_throttle = 1500;
+  latest_steering = 1500;
+  bluetooth_throttle_read = 1500;
+  bluetooth_steering_read = 1500;
 }
 
 void blePeripheralDisconnectHandler(BLEDevice central) {
