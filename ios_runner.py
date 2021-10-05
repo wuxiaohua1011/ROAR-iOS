@@ -35,7 +35,9 @@ class iOSRunner:
                                                  name=self.ios_config.world_cam_route_name,
                                                  resize=(self.pygame_display_height,
                                                          self.pygame_display_width),
-                                                 update_interval=0.025
+                                                 update_interval=0.025,
+                                                 has_intrinsics=True,
+                                                 is_ar = self.ios_config.ar_mode
                                                  )
         self.face_cam_streamer = RGBCamStreamer(host=self.ios_config.ios_ip_addr,
                                                 port=self.ios_config.ios_port,
@@ -43,7 +45,7 @@ class iOSRunner:
                                                 resize=(self.pygame_display_height,
                                                         self.pygame_display_width),
                                                 update_interval=0.025,
-                                                has_intrinsics=False
+                                                has_intrinsics=True
                                                 )
         self.depth_cam_streamer = DepthCamStreamer(host=self.ios_config.ios_ip_addr,
                                                    port=self.ios_config.ios_port,
@@ -114,17 +116,16 @@ class iOSRunner:
 
     def start_game_loop(self, auto_pilot=False):
         self.logger.info("Starting Game loop")
-        self.world_cam_streamer.connect()
         self.control_streamer.connect()
-        self.agent.add_threaded_module(self.world_cam_streamer)
         if self.ios_config.ar_mode:
-            self.face_cam_streamer.connect()
-            self.agent.add_threaded_module(self.face_cam_streamer)
+            self.world_cam_streamer.connect()
+            # self.agent.add_threaded_module(self.world_cam_streamer)
         else:
+            self.world_cam_streamer.connect()
             self.depth_cam_streamer.connect()
             self.transform_streamer.connect()
-            self.agent.add_threaded_module(self.depth_cam_streamer)
-            self.agent.add_threaded_module(self.transform_streamer)
+            # self.agent.add_threaded_module(self.depth_cam_streamer)
+            # self.agent.add_threaded_module(self.transform_streamer)
 
         try:
             self.agent.start_module_threads()
@@ -176,13 +177,18 @@ class iOSRunner:
     def convert_data(self):
         try:
             rear_rgb = None
+            if self.ios_config.ar_mode:
+                self.world_cam_streamer.receive()
+            else:
+                self.world_cam_streamer.receive()
+                self.depth_cam_streamer.receive()
+                self.transform_streamer.receive()
+
+
             if self.ios_config.ar_mode and self.world_cam_streamer.curr_image is not None:
-                front_rgb = self.world_cam_streamer.curr_image
+                front_rgb = cv2.rotate(self.world_cam_streamer.curr_image, cv2.ROTATE_90_CLOCKWISE)
             else:
                 front_rgb = cv2.rotate(self.world_cam_streamer.curr_image, cv2.ROTATE_90_CLOCKWISE)
-
-            if self.ios_config.ar_mode and self.face_cam_streamer.curr_image is not None:
-                rear_rgb = self.face_cam_streamer.curr_image
 
             sensor_data: SensorsData = \
                 self.ios_bridge.convert_sensor_data_from_source_to_agent(
