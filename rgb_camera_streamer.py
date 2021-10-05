@@ -16,7 +16,8 @@ class RGBCamStreamer(Module):
     def __init__(self, host, port, resize: Optional[Tuple] = None,
                  name: str = "world_cam", threaded: bool = True,
                  update_interval: float = 0.5,
-                 has_intrinsics: bool = True):
+                 has_intrinsics: bool = True,
+                 is_ar:bool = False):
         super().__init__(threaded=threaded, name=name, update_interval=update_interval)
 
         self.logger = logging.getLogger(f"{self.name} server on [{host}:{port}]")
@@ -26,6 +27,7 @@ class RGBCamStreamer(Module):
         self.intrinsics: Optional[np.ndarray] = None
         self.resize = resize
         self.has_intrinsics = has_intrinsics
+        self.is_ar = is_ar
 
         self.curr_image: Optional[np.ndarray] = None
         self.logger.info(f"{name} initialized")
