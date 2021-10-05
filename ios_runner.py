@@ -119,13 +119,14 @@ class iOSRunner:
         self.control_streamer.connect()
         if self.ios_config.ar_mode:
             self.world_cam_streamer.connect()
-            # self.agent.add_threaded_module(self.world_cam_streamer)
+            self.agent.add_threaded_module(self.world_cam_streamer)
         else:
             self.world_cam_streamer.connect()
             self.depth_cam_streamer.connect()
             self.transform_streamer.connect()
-            # self.agent.add_threaded_module(self.depth_cam_streamer)
-            # self.agent.add_threaded_module(self.transform_streamer)
+            self.agent.add_threaded_module(self.world_cam_streamer)
+            self.agent.add_threaded_module(self.depth_cam_streamer)
+            self.agent.add_threaded_module(self.transform_streamer)
 
         try:
             self.agent.start_module_threads()
@@ -177,13 +178,12 @@ class iOSRunner:
     def convert_data(self):
         try:
             rear_rgb = None
-            if self.ios_config.ar_mode:
-                self.world_cam_streamer.receive()
-            else:
-                self.world_cam_streamer.receive()
-                self.depth_cam_streamer.receive()
-                self.transform_streamer.receive()
-
+            # if self.ios_config.ar_mode:
+            #     self.world_cam_streamer.receive()
+            # else:
+            #     self.world_cam_streamer.receive()
+            #     self.depth_cam_streamer.receive()
+            #     self.transform_streamer.receive()
 
             if self.ios_config.ar_mode and self.world_cam_streamer.curr_image is not None:
                 front_rgb = cv2.rotate(self.world_cam_streamer.curr_image, cv2.ROTATE_90_CLOCKWISE)
@@ -210,9 +210,9 @@ class iOSRunner:
             vehicle.velocity.z = (((self.agent.vehicle.transform.location.z - vehicle.transform.location.z) / diff) + vehicle.velocity.z*5) / 6
             vehicle.control = self.control_streamer.control_tx
             self.last_control_time = current_time
-
-            if self.ios_config.ar_mode is False:
-                self.agent.front_depth_camera.intrinsics_matrix = self.depth_cam_streamer.intrinsics @ self.agent.front_depth_camera.intrinsics_transformation
+            if self.ios_config.ar_mode is False and self.depth_cam_streamer.intrinsics is not None:
+                self.agent.front_depth_camera.intrinsics_matrix = self.depth_cam_streamer.intrinsics @ self.agent.\
+                    front_depth_camera.intrinsics_transformation
 
             return sensor_data, vehicle
         except Exception as e:
