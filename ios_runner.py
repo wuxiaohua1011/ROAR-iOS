@@ -124,8 +124,8 @@ class iOSRunner:
             self.world_cam_streamer.connect()
             self.depth_cam_streamer.connect()
             self.transform_streamer.connect()
-            self.agent.add_threaded_module(self.depth_cam_streamer)
-            self.agent.add_threaded_module(self.transform_streamer)
+            # self.agent.add_threaded_module(self.depth_cam_streamer)
+            # self.agent.add_threaded_module(self.transform_streamer)
 
         try:
             self.agent.start_module_threads()
