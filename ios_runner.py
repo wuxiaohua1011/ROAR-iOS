@@ -152,6 +152,8 @@ class iOSRunner:
                                            self.ios_config.max_steering)
                 if self.should_smoothen_control:
                     self.smoothen_control(control)
+                if self.ios_config.invert_steering:
+                    control.steering = -1 * control.steering
                 self.control_streamer.send(control)
 
         except Exception as e:

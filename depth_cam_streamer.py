@@ -57,7 +57,7 @@ class DepthCamStreamer(Module):
             except Exception as e:
                 self.logger.error(f"Failed to decode image: {e}")
         except Exception as e:
-            self.logger.error(f"Failed to get image: {e}")
-
+            # self.logger.error(f"Failed to get image: {e}")
+            pass
     def run_in_series(self, **kwargs):
         self.receive()

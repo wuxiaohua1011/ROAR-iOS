@@ -56,8 +56,9 @@ class RGBCamStreamer(Module):
             except Exception as e:
                 self.logger.error(f"Failed to decode image: {e}")
         except Exception as e:
-            self.logger.error(f"Failed to get image: {e}")
+            # self.logger.error(f"Failed to get image: {e}")
             self.curr_image = None
+            pass
 
     def run_in_series(self, **kwargs):
         self.receive()

@@ -27,6 +27,7 @@ class TransformStreamer(Module):
                 self.ws.connect(f"ws://{self.host}:{self.port}/{self.name}", timeout=0.1)
             except Exception as e:
                 self.logger.error(e)
+
     def receive(self):
         try:
             result: bytes = self.ws.recv()
@@ -36,7 +37,8 @@ class TransformStreamer(Module):
                 self.logger.error(f"Failed to parse data {e}. {result}")
 
         except Exception as e:
-            self.logger.error(f"Failed to get data: {e}")
+            # self.logger.error(f"Failed to get data: {e}")
+            pass
 
     def run_in_series(self, **kwargs):
         self.receive()

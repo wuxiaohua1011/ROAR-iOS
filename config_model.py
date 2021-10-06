@@ -15,6 +15,7 @@ class iOSConfig(BaseModel):
     max_steering: float = Field(1)
 
     steering_offset: float = Field(0)
+    invert_steering: bool = Field(False)
 
     pygame_display_width: int = Field(1080)
     pygame_display_height: int = Field(810)
