@@ -13,7 +13,7 @@
 
 
 const char HANDSHAKE_START = '(';
-char* WIFI_SSID = "NETGEAR78";
+char* WIFI_SSID = "NETGEAR05";
 char* WIFI_PASS = "wuxiaohua1011";
 
 
@@ -48,7 +48,7 @@ int steering = 90;    // Steering servo initialize going straight = 90 degrees
 // Recommended PWM GPIO pins on the ESP32 include 2,4,12-19,21-23,25-27,32-33 
 // Don't use 4 - connected to LED
 int SteeringOutputPin = 2;
-int MAX = 1700; //Should be as high as 2000 but my steering is a little broken
+int MAX = 2000; //Should be as high as 2000 but my steering is a little broken
 int MIN = 1000; //Should be as low as 1000
 
 const int LED = 4; // Built in LED
@@ -68,14 +68,14 @@ void loop() {
   // put your main code here, to run repeatedly:
   server.handleClient();  
   ws.cleanupClients();
-  writeToServo();
+//  writeToServo();
 }
 
 void startServo() {
-  ESP32PWM::allocateTimer(0);
-  ESP32PWM::allocateTimer(1);
-  ESP32PWM::allocateTimer(2);
-  ESP32PWM::allocateTimer(3);
+//  ESP32PWM::allocateTimer(0);
+//  ESP32PWM::allocateTimer(1);
+//  ESP32PWM::allocateTimer(2);
+//  ESP32PWM::allocateTimer(3);
   motorControl.setPeriodHertz(50);
   motorControl.attach(motorOutputPin, MINMOTOR, MAXMOTOR);
   steeringServo.setPeriodHertz(50);    // standard 50 hz servo
@@ -84,13 +84,7 @@ void startServo() {
 
 void writeToServo() {
    steeringServo.writeMicroseconds(ws_steering_read);    // tell servo to go to position 'steering'
-   motorControl.writeMicroseconds(ws_throttle_read);    // tell motor to drive with power = motorPower
-   delay(10);  // give time  ?? do we need to 
-   
-  Serial.print(ws_throttle_read);
-  Serial.print(" ");
-  Serial.print(ws_steering_read);
-  Serial.println();
+   motorControl.writeMicroseconds(ws_throttle_read);    // tell motor to drive with power = motorPower   
 }
 
 
@@ -114,6 +108,10 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
         }
       }
   } 
+  Serial.print(ws_throttle_read);
+  Serial.print(" ");
+  Serial.print(ws_steering_read);
+  Serial.println();
 }
 void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type,
              void *arg, uint8_t *data, size_t len) {
@@ -149,8 +147,8 @@ void startCamera() {
 
 
 void startWebserver(){
-  
-  WiFi.persistent(false);
+  // delete old config
+  WiFi.disconnect(true);
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASS);
   Serial.print("Attempting to connect ..");
