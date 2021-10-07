@@ -36,7 +36,7 @@ String input_motor; // this gets the input from serial
 int motorPower = 90;    // 90 = stopped, 0 = full reverse, 180 = full forward
 // Recommended PWM GPIO pins on the ESP32 include 2,4,12-19,21-23,25-27,32-33 
 // Don't use 4 - connected to LED
-int motorOutputPin = 14;
+int motorOutputPin = 12;
 int MAXMOTOR = 2000; //Should be as high as 2000 
 int MINMOTOR = 1000; //Should be as low as 1000
 
@@ -47,7 +47,7 @@ String input_steering; // this gets the input from serial
 int steering = 90;    // Steering servo initialize going straight = 90 degrees
 // Recommended PWM GPIO pins on the ESP32 include 2,4,12-19,21-23,25-27,32-33 
 // Don't use 4 - connected to LED
-int SteeringOutputPin = 2;
+int SteeringOutputPin = 13;
 int MAX = 2000; //Should be as high as 2000 but my steering is a little broken
 int MIN = 1000; //Should be as low as 1000
 
@@ -68,7 +68,7 @@ void loop() {
   // put your main code here, to run repeatedly:
   server.handleClient();  
   ws.cleanupClients();
-//  writeToServo();
+  writeToServo();
 }
 
 void startServo() {
@@ -178,12 +178,6 @@ void startWebserver(){
   wsServer.begin();
   server.begin();
 }
-
-
-
-
-
-
 
 
 void handleBmp()
