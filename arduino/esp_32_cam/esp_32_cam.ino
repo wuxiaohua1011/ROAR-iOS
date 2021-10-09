@@ -21,6 +21,7 @@ const uint8_t fps = 10;    //sets minimum delay between frames, HW limits of ESP
 
 static auto loRes = esp32cam::Resolution::find(320, 240);
 //static auto loRes = esp32cam::Resolution::find(640, 480);
+const char HANDSHAKE_START = '(';
 
 WebServer server(80);
 AsyncWebServer asyncws(81);
@@ -75,7 +76,29 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
 }
 
 void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
-  Serial.println(len);
+  char buf[len] = "\0";
+  memcpy(buf, data, len);
+  
+  char *token = strtok(buf, ",");
+    if (token[0] == HANDSHAKE_START) {
+      if (token != NULL) {
+        unsigned int curr_throttle_read = atoi(token + 1);
+        if (curr_throttle_read >= 1000 and curr_throttle_read <= 2000) {
+          ws_throttle_read = curr_throttle_read;
+        } 
+      }
+      token = strtok(NULL, ",");
+      if (token != NULL) {
+        unsigned int curr_steering_read = atoi(token);
+        if (curr_steering_read >= 1000 and curr_steering_read <= 2000) {
+          ws_steering_read = curr_steering_read;
+        }
+      }
+  } 
+  Serial.print(ws_throttle_read);
+  Serial.print(" ");
+  Serial.print(ws_steering_read);
+  Serial.println();
 }
 
 void initWebSocket() {
