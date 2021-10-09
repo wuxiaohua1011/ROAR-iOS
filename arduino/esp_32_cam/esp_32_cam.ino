@@ -1,29 +1,11 @@
 #include <WebServer.h>
 #include <WiFi.h>
 #include <esp32cam.h>
-#include "esp_camera.h"
 #include <uri/UriBraces.h>
 #include <ESP32Servo.h>
+#include <ESPAsyncWebServer.h>
+#include <AsyncTCP.h>
 
-
-#define PWDN_GPIO_NUM     32
-#define RESET_GPIO_NUM    -1
-#define XCLK_GPIO_NUM      0
-#define SIOD_GPIO_NUM     26
-#define SIOC_GPIO_NUM     27
-
-#define Y9_GPIO_NUM       35
-#define Y8_GPIO_NUM       34
-#define Y7_GPIO_NUM       39
-#define Y6_GPIO_NUM       36
-#define Y5_GPIO_NUM       21
-#define Y4_GPIO_NUM       19
-#define Y3_GPIO_NUM       18
-#define Y2_GPIO_NUM        5
-#define VSYNC_GPIO_NUM    25
-#define HREF_GPIO_NUM     23
-#define PCLK_GPIO_NUM     22
-  
 
 #define THROTTLE_PIN 14
 #define STEERING_PIN 2
@@ -32,13 +14,18 @@
 
 
 // CHANGE YOUR WIFI CREDENTIALS!
-const char* WIFI_SSID = "NETGEAR05";
-const char* WIFI_PASS = "wuxiaohua1011";
+char* WIFI_SSID = "NETGEAR78";
+char* WIFI_PASS = "wuxiaohua1011";
+const uint8_t fps = 10;    //sets minimum delay between frames, HW limits of ESP32 allows about 12fps @ 800x600
+
 
 static auto loRes = esp32cam::Resolution::find(320, 240);
-
+//static auto loRes = esp32cam::Resolution::find(640, 480);
 
 WebServer server(80);
+AsyncWebServer asyncws(81);
+AsyncWebSocket ws("/ws");
+
 Servo throttleServo;
 Servo steeringServo;
 volatile int32_t ws_throttle_read = 1500;
@@ -63,15 +50,50 @@ void setup()
   setupCamera();
   setupWifi();
   setupRoutes();
-//  setupServo();
+  setupServo();
+  initWebSocket();
+
 }
 
+
+void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type,
+             void *arg, uint8_t *data, size_t len) {
+  switch (type) {
+    case WS_EVT_CONNECT:
+      Serial.printf("WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
+      break;
+    case WS_EVT_DISCONNECT:
+      Serial.printf("WebSocket client #%u disconnected\n", client->id());
+      break;
+    case WS_EVT_DATA:
+      handleWebSocketMessage(arg, data, len);
+      break;
+    case WS_EVT_PONG:
+    case WS_EVT_ERROR:
+      break;
+  }
+}
+
+void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
+  Serial.println(len);
+}
+
+void initWebSocket() {
+    asyncws.on("/cmd", HTTP_GET, [](AsyncWebServerRequest *request){
+      request->send(200, "text/plain", "Hello, world");
+  });
+  asyncws.begin();
+  ws.onEvent(onEvent);
+  asyncws.addHandler(&ws);
+}
 
 
 void loop()
 {
   server.handleClient();
-//  writeToServo(); 
+  ws.cleanupClients();
+
+  writeToServo(); 
   
 }
 
@@ -83,6 +105,9 @@ void writeToServo() {
 // setup functions
 
 void setupServo() {
+
+  ESP32PWM::timerCount[0]=4;
+  ESP32PWM::timerCount[1]=4;
   throttleServo.setPeriodHertz(50);
   throttleServo.attach(THROTTLE_PIN, 1000, 2000);
   steeringServo.setPeriodHertz(50);    // standard 50 hz servo
@@ -93,11 +118,13 @@ void setupRoutes() {
   Serial.print("http://");
   Serial.println(WiFi.localIP());
   Serial.println("  /cam-lo.jpg");
+  Serial.println("  /cam.mjpeg");
   Serial.println("  /cmd/<THROTTLE>,<STEERING>");
 
   server.on("/cam-lo.jpg", handleJpgLo);
+  server.on("/cam.mjpeg", handleMjpeg);
+
   server.on(UriBraces("/cmd/{}"), handleCmd);
- 
   server.begin();
 }
 
@@ -118,60 +145,17 @@ void setupWifi() {
   Serial.println("Connected!");
 }
 void setupCamera() {
-//  {
-//    using namespace esp32cam;
-//    Config cfg;
-//    cfg.setPins(pins::AiThinker);
-//    cfg.setResolution(loRes);
-//    cfg.setBufferCount(2);
-//    cfg.setJpeg(80);
-//
-//    bool ok = Camera.begin(cfg);
-//    Serial.println(ok ? "CAMERA OK" : "CAMERA FAIL");
-//  }
+  {
+    using namespace esp32cam;
+    Config cfg;
+    cfg.setPins(pins::AiThinker);
+    cfg.setResolution(loRes);
+    cfg.setBufferCount(2);
+    cfg.setJpeg(10);
 
-
-  camera_config_t config;
-  config.ledc_channel = LEDC_CHANNEL_0;
-  config.ledc_timer = LEDC_TIMER_0;
-  config.pin_d0 = Y2_GPIO_NUM;
-  config.pin_d1 = Y3_GPIO_NUM;
-  config.pin_d2 = Y4_GPIO_NUM;
-  config.pin_d3 = Y5_GPIO_NUM;
-  config.pin_d4 = Y6_GPIO_NUM;
-  config.pin_d5 = Y7_GPIO_NUM;
-  config.pin_d6 = Y8_GPIO_NUM;
-  config.pin_d7 = Y9_GPIO_NUM;
-  config.pin_xclk = XCLK_GPIO_NUM;
-  config.pin_pclk = PCLK_GPIO_NUM;
-  config.pin_vsync = VSYNC_GPIO_NUM;
-  config.pin_href = HREF_GPIO_NUM;
-  config.pin_sscb_sda = SIOD_GPIO_NUM;
-  config.pin_sscb_scl = SIOC_GPIO_NUM;
-  config.pin_pwdn = PWDN_GPIO_NUM;
-  config.pin_reset = RESET_GPIO_NUM;
-  config.xclk_freq_hz = 20000000;
-  config.pixel_format = PIXFORMAT_JPEG; 
-  
-  if(psramFound()){
-    config.frame_size = FRAMESIZE_VGA;
-    config.jpeg_quality = 10;
-    config.fb_count = 2;
-  } else {
-    config.frame_size = FRAMESIZE_SVGA;
-    config.jpeg_quality = 12;
-    config.fb_count = 1;
+    bool ok = Camera.begin(cfg);
+    Serial.println(ok ? "CAMERA OK" : "CAMERA FAIL");
   }
-
-  // Camera init
-  esp_err_t err = esp_camera_init(&config);
-  if (err != ESP_OK) {
-    Serial.printf("Camera init failed with error 0x%x", err);
-    return;
-  } else {
-    Serial.println("Camera Init Success");
-  }
-  
 }
 
 // handle routes
@@ -194,10 +178,10 @@ void handleCmd() {
       ws_steering_read = curr_steering_read;
     }
   } 
-//  Serial.print(ws_throttle_read);
-//  Serial.print(" ");
-//  Serial.print(ws_steering_read);
-//  Serial.println();
+  Serial.print(ws_throttle_read);
+  Serial.print(" ");
+  Serial.print(ws_steering_read);
+  Serial.println();
   server.send(200, "text/plain","ack");
 }
 
@@ -217,6 +201,19 @@ void handleJpgLo()
   server.send(200, "image/jpeg");
   WiFiClient client = server.client();
   frame->writeTo(client);
+}
+
+void handleMjpeg() {
+  Serial.println("STREAM BEGIN");
+  WiFiClient client = server.client();
+  auto startTime = millis();
+  int res = esp32cam::Camera.streamMjpeg(client);
+  if (res <= 0) {
+    Serial.printf("STREAM ERROR %d\n", res);
+    return;
+  }
+  auto duration = millis() - startTime;
+  Serial.printf("STREAM END %dfrm %0.2ffps\n", res, 1000.0 * res / duration);
 }
 
 
