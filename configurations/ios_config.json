@@ -6,5 +6,5 @@
   "max_throttle": 0.5,
   "max_steering": 1,
   "steering_offset": 0.1,
-  "invert_steering": true
+  "invert_steering": false
 }
