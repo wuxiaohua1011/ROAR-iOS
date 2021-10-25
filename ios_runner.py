@@ -10,7 +10,7 @@ from typing import Optional, Tuple
 from ROAR_iOS.manual_control import ManualControl
 from ROAR_iOS.depth_cam_streamer import DepthCamStreamer
 from ROAR_iOS.rgb_camera_streamer import RGBCamStreamer
-from ROAR_iOS.transform_streamer import TransformStreamer
+from ROAR_iOS.transform_streamer import VehStateStreamer
 from ROAR_iOS.control_streamer import ControlStreamer
 import numpy as np
 import cv2
@@ -30,35 +30,38 @@ class iOSRunner:
         self.controller = ManualControl(ios_config=ios_config)
 
         self.setup_pygame()
-        self.world_cam_streamer = RGBCamStreamer(host=self.ios_config.ios_ip_addr,
-                                                 port=self.ios_config.ios_port,
+        self.world_cam_streamer = RGBCamStreamer(ios_addr=self.ios_config.ios_ip_addr,
+                                                 ios_port=self.ios_config.ios_port,
+                                                 pc_port=8001,
                                                  name=self.ios_config.world_cam_route_name,
                                                  resize=(self.pygame_display_height,
                                                          self.pygame_display_width),
                                                  update_interval=0.025,
                                                  has_intrinsics=True,
-                                                 is_ar = self.ios_config.ar_mode
+                                                 is_ar=self.ios_config.ar_mode
                                                  )
-        self.face_cam_streamer = RGBCamStreamer(host=self.ios_config.ios_ip_addr,
-                                                port=self.ios_config.ios_port,
+        self.face_cam_streamer = RGBCamStreamer(ios_addr=self.ios_config.ios_ip_addr,
+                                                ios_port=self.ios_config.ios_port,
                                                 name=self.ios_config.face_cam_route_name,
+                                                pc_port=8003,
                                                 resize=(self.pygame_display_height,
                                                         self.pygame_display_width),
                                                 update_interval=0.025,
                                                 has_intrinsics=True
                                                 )
-        self.depth_cam_streamer = DepthCamStreamer(host=self.ios_config.ios_ip_addr,
-                                                   port=self.ios_config.ios_port,
+        self.depth_cam_streamer = DepthCamStreamer(ios_addr=self.ios_config.ios_ip_addr,
+                                                   ios_port=self.ios_config.ios_port,
+                                                   pc_port=8002,
                                                    name=self.ios_config.depth_cam_route_name,
                                                    threaded=True,
                                                    update_interval=0.1,
                                                    )
-        self.transform_streamer = TransformStreamer(host=self.ios_config.ios_ip_addr,
-                                                    port=self.ios_config.ios_port,
-                                                    name=self.ios_config.transform_route_name,
-                                                    update_interval=0.01)
-        self.control_streamer = ControlStreamer(host=self.ios_config.ios_ip_addr,
-                                                port=self.ios_config.ios_port,
+        self.veh_state_streamer = VehStateStreamer(ios_addr=self.ios_config.ios_ip_addr,
+                                                   ios_port=self.ios_config.ios_port,
+                                                   name=self.ios_config.veh_state_route_name,
+                                                   update_interval=0.01)
+        self.control_streamer = ControlStreamer(ios_addr=self.ios_config.ios_ip_addr,
+                                                ios_port=self.ios_config.ios_port,
                                                 name=self.ios_config.control_route_name)
 
         self.front_cam_display_size: Tuple[int, int] = (100, 480)
@@ -123,10 +126,10 @@ class iOSRunner:
         else:
             self.world_cam_streamer.connect()
             self.depth_cam_streamer.connect()
-            self.transform_streamer.connect()
+            self.veh_state_streamer.connect()
             self.agent.add_threaded_module(self.world_cam_streamer)
             self.agent.add_threaded_module(self.depth_cam_streamer)
-            self.agent.add_threaded_module(self.transform_streamer)
+            self.agent.add_threaded_module(self.veh_state_streamer)
 
         try:
             self.agent.start_module_threads()
@@ -168,7 +171,8 @@ class iOSRunner:
                                (self.throttle_smoothen_factor + 1)
         if abs(control.steering) < abs(self.prev_control.steering):
             # slowly turn back
-            control.steering = (self.prev_control.steering * self.steering_smoothen_factor_backward + control.steering) / \
+            control.steering = (
+                                           self.prev_control.steering * self.steering_smoothen_factor_backward + control.steering) / \
                                (self.steering_smoothen_factor_backward + 1)
         elif abs(control.steering) < abs(self.prev_control.steering):
             control.steering = (self.prev_control.steering * self.steering_smoothen_factor_forward + control.steering) / \
@@ -181,6 +185,7 @@ class iOSRunner:
         try:
             rear_rgb = None
             # if self.ios_config.ar_mode:
+            # pass
             #     self.world_cam_streamer.receive()
             # else:
             #     self.world_cam_streamer.receive()
@@ -202,20 +207,16 @@ class iOSRunner:
                 )
             vehicle = self.ios_bridge.convert_vehicle_from_source_to_agent(
                 {
-                    "transform": self.transform_streamer.transform,
+                    "transform": self.veh_state_streamer.transform,
+                    "velocity": self.veh_state_streamer.velocity
                 }
             )
-            current_time = time.time()
-            diff = current_time - self.last_control_time
-            vehicle.velocity.x = (((self.agent.vehicle.transform.location.x - vehicle.transform.location.x) / diff) + vehicle.velocity.x*5) / 6
-            vehicle.velocity.y = (((self.agent.vehicle.transform.location.y - vehicle.transform.location.y) / diff) + vehicle.velocity.y*5) / 6
-            vehicle.velocity.z = (((self.agent.vehicle.transform.location.z - vehicle.transform.location.z) / diff) + vehicle.velocity.z*5) / 6
             vehicle.control = self.control_streamer.control_tx
-            self.last_control_time = current_time
-            if self.ios_config.ar_mode is False and self.depth_cam_streamer.intrinsics is not None:
-                self.agent.front_depth_camera.intrinsics_matrix = self.depth_cam_streamer.intrinsics @ self.agent.\
-                    front_depth_camera.intrinsics_transformation
 
+            # self.last_control_time = current_time
+            if self.ios_config.ar_mode is False and self.depth_cam_streamer.intrinsics is not None:
+                self.agent.front_depth_camera.intrinsics_matrix = self.depth_cam_streamer.intrinsics @ self.agent. \
+                    front_depth_camera.intrinsics_transformation
             return sensor_data, vehicle
         except Exception as e:
             self.logger.error(f"Cannot convert data: {e}")
@@ -252,10 +253,10 @@ class iOSRunner:
         overlay_frame: Optional[np.ndarray] = None
         if world_cam_data is not None:
             s = world_cam_data.shape
-            height = 3*s[1]//4
+            height = 3 * s[1] // 4
             min_y = s[0] - height - self.controller.vertical_view_offset
             max_y = s[0] - self.controller.vertical_view_offset
-            display_view = world_cam_data[min_y:max_y , :]
+            display_view = world_cam_data[min_y:max_y, :]
             frame = cv2.resize(display_view, dsize=(self.pygame_display_width, self.pygame_display_height))
 
         if face_cam_data is not None:
@@ -284,8 +285,8 @@ class iOSRunner:
                                 color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
             frame = cv2.putText(img=frame,
                                 text=f"{self.control_streamer.control_tx} | "
-                                     f"max_throttle = {round(self.ios_config.max_throttle,3)} | "
-                                     f"max_steering = {round(self.ios_config.max_steering,3)}",
+                                     f"max_throttle = {round(self.ios_config.max_throttle, 3)} | "
+                                     f"max_steering = {round(self.ios_config.max_steering, 3)}",
                                 org=(20, frame.shape[0] - 40), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.6,
                                 color=(0, 255, 0),  # BGR
                                 thickness=1, lineType=cv2.LINE_AA)

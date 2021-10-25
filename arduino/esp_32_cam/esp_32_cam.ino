@@ -5,6 +5,7 @@
 #include <ESP32Servo.h>
 #include <ESPAsyncWebServer.h>
 #include <AsyncTCP.h>
+#include "esp_camera.h"
 
 
 #define THROTTLE_PIN 14
@@ -20,12 +21,11 @@ const uint8_t fps = 10;    //sets minimum delay between frames, HW limits of ESP
 
 
 static auto loRes = esp32cam::Resolution::find(320, 240);
-//static auto loRes = esp32cam::Resolution::find(640, 480);
 const char HANDSHAKE_START = '(';
 
 WebServer server(80);
-AsyncWebServer asyncws(81);
-AsyncWebSocket ws("/ws");
+AsyncWebServer asyncServer(81);
+AsyncWebSocket controlWS("/control");
 
 Servo throttleServo;
 Servo steeringServo;
@@ -43,10 +43,6 @@ void setup()
   Serial.begin(115200);
   Serial.println();
   pinMode(RED_LED_PIN, OUTPUT);
-//  ledcSetup(0, 5000, 8);
-//  ledcAttachPin(FLASH_LED_PIN, 0);
-//  ledcWrite(FLASH_LED_PIN, 0);
-
 
   setupCamera();
   setupWifi();
@@ -57,17 +53,17 @@ void setup()
 }
 
 
-void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type,
+void onControlEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type,
              void *arg, uint8_t *data, size_t len) {
   switch (type) {
     case WS_EVT_CONNECT:
-      Serial.printf("WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
+      Serial.printf("Control WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
       break;
     case WS_EVT_DISCONNECT:
-      Serial.printf("WebSocket client #%u disconnected\n", client->id());
+      Serial.printf("Control WebSocket client #%u disconnected\n", client->id());
       break;
     case WS_EVT_DATA:
-      handleWebSocketMessage(arg, data, len);
+      handleControlWebSocketMessage(arg, data, len);
       break;
     case WS_EVT_PONG:
     case WS_EVT_ERROR:
@@ -75,7 +71,7 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
   }
 }
 
-void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
+void handleControlWebSocketMessage(void *arg, uint8_t *data, size_t len) {
   char buf[len] = "\0";
   memcpy(buf, data, len);
   
@@ -95,29 +91,22 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
         }
       }
   } 
-  Serial.print(ws_throttle_read);
-  Serial.print(" ");
-  Serial.print(ws_steering_read);
-  Serial.println();
 }
 
-void initWebSocket() {
-    asyncws.on("/cmd", HTTP_GET, [](AsyncWebServerRequest *request){
-      request->send(200, "text/plain", "Hello, world");
-  });
-  asyncws.begin();
-  ws.onEvent(onEvent);
-  asyncws.addHandler(&ws);
+
+
+void initWebSocket() {  
+  asyncServer.begin();
+  controlWS.onEvent(onControlEvent);
+  asyncServer.addHandler(&controlWS);
 }
 
 
 void loop()
 {
   server.handleClient();
-  ws.cleanupClients();
-
+  controlWS.cleanupClients();
   writeToServo(); 
-  
 }
 
 void writeToServo() {
@@ -128,7 +117,6 @@ void writeToServo() {
 // setup functions
 
 void setupServo() {
-
   ESP32PWM::timerCount[0]=4;
   ESP32PWM::timerCount[1]=4;
   throttleServo.setPeriodHertz(50);

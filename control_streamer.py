@@ -13,12 +13,12 @@ class ControlStreamer(Module):
         # no need to save. use Agent's saving mechanism
         pass
 
-    def __init__(self, host: str, port: int, name: str = "control",
+    def __init__(self, ios_addr: str, ios_port: int, name: str = "control",
                  threaded: bool = True):
         super().__init__(threaded=threaded, name=name)
-        self.logger = logging.getLogger(f"{self.name} server [{host}:{port}]")
-        self.host = host
-        self.port = port
+        self.logger = logging.getLogger(f"{self.name} server [{ios_addr}:{ios_port}]")
+        self.host = ios_addr
+        self.port = ios_port
         self.control_rx: VehicleControl = VehicleControl()
         self.control_tx: VehicleControl = VehicleControl()
         self.ws_tx = websocket.WebSocket()
@@ -26,11 +26,7 @@ class ControlStreamer(Module):
         self.logger.info(f"{name} initialized")
 
     def connect(self):
-        for i in range(10):
-            try:
-                self.ws_tx.connect(f"ws://{self.host}:{self.port}/{self.name}_rx", timeout=0.1)
-            except Exception as e:
-                self.logger.error(e)
+        self.ws_tx.connect(f"ws://{self.host}:{self.port}/{self.name}_rx", timeout=0.1)
 
     def send(self, vehicle_control: VehicleControl):
         try:

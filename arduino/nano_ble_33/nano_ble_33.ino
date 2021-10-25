@@ -146,7 +146,7 @@ void ensureSmoothBackTransition() {
   if (isForwardState and latest_throttle < 1500) {
     writeToServo(1500, latest_steering);
     delay(100);
-    writeToServo(1000, latest_steering);
+    writeToServo(1450, latest_steering);
     delay(100);
     writeToServo(1500,latest_steering);
     delay(100);

@@ -11,7 +11,7 @@ from threading import Thread
 
 def main(host):
     ws = websocket.WebSocket()
-    ws.connect(f"ws://{host}:81/ws")
+    ws.connect(f"ws://{host}:81/control")
     while True:
         start = time.time()
         # need to make this part asynchronous
@@ -23,7 +23,7 @@ def main(host):
         if ord('q') == cv2.waitKey(1):
             exit(0)
 
-        ws.send(f"({1500},{1500})")
+        # ws.send(f"({1500},{1500})")
         # res = input("Enter throttle, steering: ")
         # res = "1500,1500"
         # throttle, steering = res.split(",")
