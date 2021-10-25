@@ -40,7 +40,10 @@ class RGBCamStreamer(Module):
         self.logger.info(f"{name} initialized")
 
     def connect(self):
-        self.ws.connect(f"ws://{self.host}:{self.port}/{self.name}", timeout=0.1)
+        try:
+            self.ws.connect(f"ws://{self.host}:{self.port}/{self.name}", timeout=0.1)
+        except:
+            raise Exception("Unable to connect to RGB Streamer")
         self.dump_buffer()
 
     def receive(self):

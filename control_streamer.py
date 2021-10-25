@@ -26,7 +26,10 @@ class ControlStreamer(Module):
         self.logger.info(f"{name} initialized")
 
     def connect(self):
-        self.ws_tx.connect(f"ws://{self.host}:{self.port}/{self.name}_rx", timeout=0.1)
+        try:
+            self.ws_tx.connect(f"ws://{self.host}:{self.port}/{self.name}_rx", timeout=0.1)
+        except:
+            raise Exception("Unable to connect to Control Streamer")
 
     def send(self, vehicle_control: VehicleControl):
         try:
