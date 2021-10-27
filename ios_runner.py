@@ -130,7 +130,6 @@ class iOSRunner:
             self.agent.add_threaded_module(self.world_cam_streamer)
             self.agent.add_threaded_module(self.depth_cam_streamer)
             self.agent.add_threaded_module(self.veh_state_streamer)
-
         try:
             self.agent.start_module_threads()
 

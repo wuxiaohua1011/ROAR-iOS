@@ -41,17 +41,20 @@ class RGBCamStreamer(Module):
 
     def connect(self):
         try:
+            self.logger.info(f"connecting to ws://{self.host}:{self.port}/{self.name}")
             self.ws.connect(f"ws://{self.host}:{self.port}/{self.name}", timeout=0.1)
+            self.logger.info("connected")
         except:
             raise Exception("Unable to connect to RGB Streamer")
         self.dump_buffer()
+        self.logger.info("Frame alignment success")
 
     def receive(self):
         try:
             img = self.recv_img()
             self.curr_image = img
             if self.has_intrinsics:
-                intrinsics_str = self.ws.recv()
+                intrinsics_str = self.ws.recv()  # "fx,fy, cx,cy"
                 intrinsics_arr = [float(i) for i in intrinsics_str.split(",")]
                 self.intrinsics = np.array([
                     [intrinsics_arr[0], 0, intrinsics_arr[2]],
@@ -69,6 +72,7 @@ class RGBCamStreamer(Module):
         while True:
             seg, addr = self.s.recvfrom(MAX_DGRAM)
             prefix_num = int(seg[0:3].decode('ascii'))
+
             if prefix_num > 1:
                 dat += seg[3:]
             else:

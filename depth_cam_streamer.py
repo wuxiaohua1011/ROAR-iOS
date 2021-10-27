@@ -41,15 +41,17 @@ class DepthCamStreamer(Module):
 
     def connect(self):
         try:
+            self.logger.info(f"connecting to ws://{self.host}:{self.port}/{self.name}")
             self.ws.connect(f"ws://{self.host}:{self.port}/{self.name}", timeout=0.1)
+            self.logger.info("connected")
         except:
             raise Exception("Unable to connect to Depth streamer")
         self.dump_buffer()
+        self.logger.info("Frame alignment success")
 
     def receive(self):
         try:
             intrinsics_str: str = self.ws.recv()
-
             intrinsics_arr = [float(i) for i in intrinsics_str.split(",")]
             self.intrinsics = np.array([
                 [intrinsics_arr[0], 0, intrinsics_arr[2]],
