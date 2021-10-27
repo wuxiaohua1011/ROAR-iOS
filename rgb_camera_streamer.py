@@ -6,7 +6,7 @@ import numpy as np
 from pathlib import Path
 from ROAR.utilities_module.module import Module
 import socket
-import datetime
+import time
 from ROAR.utilities_module.utilities import get_ip
 
 MAX_DGRAM = 9600

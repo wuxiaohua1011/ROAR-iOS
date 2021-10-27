@@ -51,13 +51,6 @@ class DepthCamStreamer(Module):
 
     def receive(self):
         try:
-            intrinsics_str: str = self.ws.recv()
-            intrinsics_arr = [float(i) for i in intrinsics_str.split(",")]
-            self.intrinsics = np.array([
-                [intrinsics_arr[0], 0, intrinsics_arr[2]],
-                [0, intrinsics_arr[1], intrinsics_arr[3]],
-                [0, 0, 1]
-            ])
             """
             width=256 height=192 bytesPerRow=1024 pixelFormat=fdep
             """
@@ -65,6 +58,17 @@ class DepthCamStreamer(Module):
             self.curr_image = np.rot90(img.reshape((192, 256)), k=-1)
         except Exception as e:
             self.logger.error(f"Failed to recv depth image: {e}")
+        try:
+            intrinsics_str: str = self.ws.recv()
+            intrinsics_arr = [float(i) for i in intrinsics_str.split(",")]
+            self.intrinsics = np.array([
+                [intrinsics_arr[0], 0, intrinsics_arr[2]],
+                [0, intrinsics_arr[1], intrinsics_arr[3]],
+                [0, 0, 1]
+            ])
+
+        except Exception as e:
+            self.logger.error(f"Failed to recv depth intrinsics: {e}")
 
     def recv_img(self):
         dat = b''
