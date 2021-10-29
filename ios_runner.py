@@ -30,31 +30,16 @@ class iOSRunner:
         self.controller = ManualControl(ios_config=ios_config)
 
         self.setup_pygame()
-        self.world_cam_streamer = RGBCamStreamer(ios_addr=self.ios_config.ios_ip_addr,
-                                                 ios_port=self.ios_config.ios_port,
-                                                 pc_port=8001,
-                                                 name=self.ios_config.world_cam_route_name,
+        self.world_cam_streamer = RGBCamStreamer(pc_port=8001,
+                                                 name="world rgb streamer",
                                                  resize=(self.pygame_display_height,
                                                          self.pygame_display_width),
                                                  update_interval=0.025,
-                                                 has_intrinsics=True,
-                                                 is_ar=self.ios_config.ar_mode
-                                                 )
-        self.face_cam_streamer = RGBCamStreamer(ios_addr=self.ios_config.ios_ip_addr,
-                                                ios_port=self.ios_config.ios_port,
-                                                name=self.ios_config.face_cam_route_name,
-                                                pc_port=8003,
-                                                resize=(self.pygame_display_height,
-                                                        self.pygame_display_width),
-                                                update_interval=0.025,
-                                                has_intrinsics=True
-                                                )
-        self.depth_cam_streamer = DepthCamStreamer(ios_addr=self.ios_config.ios_ip_addr,
-                                                   ios_port=self.ios_config.ios_port,
-                                                   pc_port=8002,
-                                                   name=self.ios_config.depth_cam_route_name,
+                                                 threaded=True)
+        self.depth_cam_streamer = DepthCamStreamer(name=self.ios_config.depth_cam_route_name,
                                                    threaded=True,
-                                                   update_interval=0.1,
+                                                   update_interval=0.025,
+                                                   pc_port=8002
                                                    )
         self.veh_state_streamer = VehStateStreamer(ios_addr=self.ios_config.ios_ip_addr,
                                                    ios_port=self.ios_config.ios_port,
@@ -183,14 +168,6 @@ class iOSRunner:
     def convert_data(self):
         try:
             rear_rgb = None
-            # if self.ios_config.ar_mode:
-            # pass
-            #     self.world_cam_streamer.receive()
-            # else:
-            #     self.world_cam_streamer.receive()
-            #     self.depth_cam_streamer.receive()
-            #     self.transform_streamer.receive()
-
             if self.ios_config.ar_mode and self.world_cam_streamer.curr_image is not None:
                 front_rgb = cv2.rotate(self.world_cam_streamer.curr_image, cv2.ROTATE_90_CLOCKWISE)
             else:
@@ -211,11 +188,9 @@ class iOSRunner:
                 }
             )
             vehicle.control = self.control_streamer.control_tx
-
-            # self.last_control_time = current_time
-            if self.ios_config.ar_mode is False and self.depth_cam_streamer.intrinsics is not None:
-                self.agent.front_depth_camera.intrinsics_matrix = self.depth_cam_streamer.intrinsics @ self.agent. \
-                    front_depth_camera.intrinsics_transformation
+            # if self.ios_config.ar_mode is False and self.depth_cam_streamer.intrinsics is not None:
+            #     self.agent.front_depth_camera.intrinsics_matrix = self.depth_cam_streamer.intrinsics @ self.agent. \
+            #         front_depth_camera.intrinsics_transformation
             return sensor_data, vehicle
         except Exception as e:
             self.logger.error(f"Cannot convert data: {e}")
