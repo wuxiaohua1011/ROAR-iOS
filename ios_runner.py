@@ -110,10 +110,10 @@ class iOSRunner:
             self.agent.add_threaded_module(self.world_cam_streamer)
         else:
             self.world_cam_streamer.connect()
-            # self.depth_cam_streamer.connect()
+            self.depth_cam_streamer.connect()
             self.veh_state_streamer.connect()
             self.agent.add_threaded_module(self.world_cam_streamer)
-            # self.agent.add_threaded_module(self.depth_cam_streamer)
+            self.agent.add_threaded_module(self.depth_cam_streamer)
             self.agent.add_threaded_module(self.veh_state_streamer)
         try:
             self.agent.start_module_threads()
@@ -188,9 +188,12 @@ class iOSRunner:
                 }
             )
             vehicle.control = self.control_streamer.control_tx
-            # if self.ios_config.ar_mode is False and self.depth_cam_streamer.intrinsics is not None:
-            #     self.agent.front_depth_camera.intrinsics_matrix = self.depth_cam_streamer.intrinsics @ self.agent. \
-            #         front_depth_camera.intrinsics_transformation
+            if self.depth_cam_streamer.intrinsics is not None:
+                self.agent.front_depth_camera.intrinsics_matrix = self.depth_cam_streamer.intrinsics @ self.\
+                    agent.front_depth_camera.intrinsics_transformation
+            if self.world_cam_streamer.intrinsics is not None:
+                self.agent.front_rgb_camera.intrinsics_matrix = self.world_cam_streamer.intrinsics @ \
+                                                                self.agent.front_rgb_camera.intrinsics_transformation
             return sensor_data, vehicle
         except Exception as e:
             self.logger.error(f"Cannot convert data: {e}")

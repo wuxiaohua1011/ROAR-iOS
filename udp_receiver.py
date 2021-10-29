@@ -40,7 +40,6 @@ class UDPStreamer(Module):
             seg, addr = self.s.recvfrom(MAX_DGRAM)
             prefix_num = int(seg[0:3].decode('ascii'))
             total_num = int(seg[3:6].decode('ascii'))
-
             if prefix_num > 1:
                 dat += seg[6:]
             else:

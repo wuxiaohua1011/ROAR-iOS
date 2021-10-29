@@ -1,16 +1,8 @@
-import logging
-import websocket
 from typing import List, Optional, Tuple, List
 import cv2
 import numpy as np
-from pathlib import Path
 from ROAR_iOS.udp_receiver import UDPStreamer
-from ROAR.utilities_module.module import Module
-import socket
-import time
-from ROAR.utilities_module.utilities import get_ip
-from collections import deque
-
+import struct
 MAX_DGRAM = 9600
 
 
@@ -19,13 +11,22 @@ class RGBCamStreamer(UDPStreamer):
         super().__init__(**kwargs)
         self.curr_image: Optional[np.ndarray] = None
         self.resize = resize
+        self.intrinsics: Optional[np.ndarray] = None
 
     def run_in_series(self, **kwargs):
         try:
             data = self.recv()
-            img_data = data[:-32]
-            intinsics = data[-32:]
-            print(intinsics)
+            img_data = data[16:]
+            intrinsics = data[:16]
+            fx, fy, cx, cy = struct.unpack('f', intrinsics[0:4])[0], \
+                             struct.unpack('f', intrinsics[4:8])[0], \
+                             struct.unpack('f', intrinsics[8:12])[0], \
+                             struct.unpack('f', intrinsics[12:16])[0]
+            self.intrinsics = np.array([
+                [fx, 0, cx],
+                [0, fy, cy],
+                [0, 0, 1]
+            ])
             img = np.frombuffer(img_data, dtype=np.uint8)
             img = cv2.imdecode(img, cv2.IMREAD_UNCHANGED)
             if img is not None:
