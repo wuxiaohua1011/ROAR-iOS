@@ -5,7 +5,7 @@ from ROAR.utilities_module.vehicle_models import VehicleControl
 import numpy as np
 from typing import Tuple
 from ROAR_iOS.config_model import iOSConfig
-
+import os, sys
 class ManualControl:
     def __init__(self, throttle_increment=0.05, steering_increment=0.05,
                  ios_config:iOSConfig = iOSConfig):
@@ -76,27 +76,38 @@ class ManualControl:
     def _parse_joystick(self) -> Tuple[float, float]:
         # code to test which axis is your controller using
         # vals = [self.joystick.get_axis(i) for i in range(self.joystick.get_numaxes())]
-        # print(vals)
-        left_trigger_val: float = self.joystick.get_axis(5)
-        right_trigger_val: float = self.joystick.get_axis(4)
-        left_joystick_vertical_val = self.joystick.get_axis(1)
-        left_joystick_horizontal_val = self.joystick.get_axis(0)
-        right_joystick_vertical_val = self.joystick.get_axis(3)
-        right_joystick_horizontal_val = self.joystick.get_axis(2)
+        if sys.platform == "win32":
+            trigger_val: float = self.joystick.get_axis(2)
+            right_stick_hori_val = self.joystick.get_axis(4)
+            left_stick_vert_val = self.joystick.get_axis(3)
+            throttle = -trigger_val
+            steering = right_stick_hori_val
+            if left_stick_vert_val > 0.5:
+                self.vertical_view_offset = min(500, self.vertical_view_offset + 5)
+            elif left_stick_vert_val < -0.5:
+                self.vertical_view_offset = max(0, self.vertical_view_offset - 5)
+            return throttle, steering
+        else:
+            left_trigger_val: float = self.joystick.get_axis(5)
+            right_trigger_val: float = self.joystick.get_axis(4)
+            left_joystick_vertical_val = self.joystick.get_axis(1)
+            left_joystick_horizontal_val = self.joystick.get_axis(0)
+            right_joystick_vertical_val = self.joystick.get_axis(3)
+            right_joystick_horizontal_val = self.joystick.get_axis(2)
 
-        # post processing on raw values
-        left_trigger_val = (1 + left_trigger_val) / 2
-        right_trigger_val = (1 + right_trigger_val) / 2
-        throttle = left_trigger_val + (-1 * right_trigger_val)
-        steering = right_joystick_horizontal_val
-        left_joystick_vertical_val = -1 * left_joystick_vertical_val
+            # post processing on raw values
+            left_trigger_val = (1 + left_trigger_val) / 2
+            right_trigger_val = (1 + right_trigger_val) / 2
+            throttle = left_trigger_val + (-1 * right_trigger_val)
+            steering = right_joystick_horizontal_val
+            left_joystick_vertical_val = -1 * left_joystick_vertical_val
 
-        if left_joystick_vertical_val > 0.5:
-            self.vertical_view_offset = min(500, self.vertical_view_offset + 5)
-        elif left_joystick_vertical_val < -0.5:
-            self.vertical_view_offset = max(0, self.vertical_view_offset - 5)
-
-        return throttle, steering
+            if left_joystick_vertical_val > 0.5:
+                self.vertical_view_offset = min(500, self.vertical_view_offset + 5)
+            elif left_joystick_vertical_val < -0.5:
+                self.vertical_view_offset = max(0, self.vertical_view_offset - 5)
+            throttle, steering = 0, 0
+            return throttle, steering
 
     def _parse_vehicle_keys(self, keys) -> Tuple[float, float]:
         """
