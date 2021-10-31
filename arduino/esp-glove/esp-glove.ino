@@ -7,21 +7,81 @@
 #define I2C_SDA 14
 #define I2C_SCL 2
 
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 32 // OLED display height, in pixels
+
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+
 Adafruit_MPU6050 mpu;
 
 void setup(void) {
   Serial.begin(115200);
   while (!Serial)
-    delay(10); // will pause Zero, Leonardo, etc until serial console opens
-
-  Serial.println("Adafruit MPU6050 test!");
+  delay(10); // will pause Zero, Leonardo, etc until serial console opens
   Wire.begin(I2C_SDA, I2C_SCL);
+  setUpMPU6050();
+  setupDisplay();
+  
+}
+
+void loop() {
+  /* Get new sensor events with the readings */
+  sensors_event_t a, g, temp;
+  mpu.getEvent(&a, &g, &temp);
+
+  /* Print out the values */
+  String content = String("Acceleration: \n") + String(a.acceleration.x) + String(", ") + String(a.acceleration.y) + String(", ") + String(a.acceleration.z) + String("\n");
+  printToDisplay(content);
+  Serial.print("Acceleration X: ");
+  Serial.print(a.acceleration.x);
+  Serial.print(", Y: ");
+  Serial.print(a.acceleration.y);
+  Serial.print(", Z: ");
+  Serial.print(a.acceleration.z);
+  Serial.println(" m/s^2");
+//
+//  Serial.print("Rotation X: ");
+//  Serial.print(g.gyro.x);
+//  Serial.print(", Y: ");
+//  Serial.print(g.gyro.y);
+//  Serial.print(", Z: ");
+//  Serial.print(g.gyro.z);
+//  Serial.println(" rad/s");
+//
+//  Serial.print("Temperature: ");
+//  Serial.print(temp.temperature);
+//  Serial.println(" degC");
+//
+//  Serial.println("");
+
+}
+
+void setupDisplay() {
+  while(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    delay(100);
+  }
+  display.clearDisplay();
+  display.setTextColor(WHITE);
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  printToDisplay("Board Starting...");
+}
+
+
+void printToDisplay(String content) {
+  display.clearDisplay();
+  display.setCursor(0,0);
+  display.println(content);
+  display.display();
+}
+
+void setUpMPU6050() {
+  Serial.println("Adafruit MPU6050 test!");
   // Try to initialize!
-  if (!mpu.begin()) {
+  while (!mpu.begin()) {
     Serial.println("Failed to find MPU6050 chip");
-    while (1) {
-      delay(10);
-    }
+    delay(100);
   }
   Serial.println("MPU6050 Found!");
 
@@ -86,34 +146,4 @@ void setup(void) {
 
   Serial.println("");
   delay(100);
-}
-
-void loop() {
-  /* Get new sensor events with the readings */
-  sensors_event_t a, g, temp;
-  mpu.getEvent(&a, &g, &temp);
-
-  /* Print out the values */
-  Serial.print("Acceleration X: ");
-  Serial.print(a.acceleration.x);
-  Serial.print(", Y: ");
-  Serial.print(a.acceleration.y);
-  Serial.print(", Z: ");
-  Serial.print(a.acceleration.z);
-  Serial.println(" m/s^2");
-
-  Serial.print("Rotation X: ");
-  Serial.print(g.gyro.x);
-  Serial.print(", Y: ");
-  Serial.print(g.gyro.y);
-  Serial.print(", Z: ");
-  Serial.print(g.gyro.z);
-  Serial.println(" rad/s");
-
-  Serial.print("Temperature: ");
-  Serial.print(temp.temperature);
-  Serial.println(" degC");
-
-  Serial.println("");
-  delay(500);
 }
