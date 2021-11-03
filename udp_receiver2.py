@@ -1,102 +1,108 @@
-# import cv2
-# import socket
-# import pickle
-# import numpy as np
-#
-# host = "127.0.0.1"
-# port = 5000
-# max_length = 9000
-#
-# sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-# sock.bind((host, port))
-#
-# frame_info = None
-# buffer = None
-# frame = None
-#
-# print("-> waiting for connection")
-#
-# while True:
-#     data, address = sock.recvfrom(max_length)
-#
-#     if len(data) < 100:
-#         frame_info = pickle.loads(data)
-#
-#         if frame_info:
-#             nums_of_packs = frame_info["packs"]
-#
-#             for i in range(nums_of_packs):
-#                 data, address = sock.recvfrom(max_length)
-#
-#                 if i == 0:
-#                     buffer = data
-#                 else:
-#                     buffer += data
-#
-#             frame = np.frombuffer(buffer, dtype=np.uint8)
-#             frame = frame.reshape(frame.shape[0], 1)
-#
-#             frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
-#             frame = cv2.flip(frame, 1)
-#
-#             if frame is not None and type(frame) == np.ndarray:
-#                 cv2.imshow("Stream", frame)
-#                 if cv2.waitKey(1) == 27:
-#                     break
-#
-# print("goodbye")
-
-
-# !/usr/bin/env python
-
-from __future__ import division
-import cv2
-import numpy as np
+import logging
 import socket
-import struct
+import sys, os
+from pathlib import Path
+import time
 
-MAX_DGRAM = 2 ** 16
+sys.path.append(Path(os.getcwd()).parent.as_posix())
+from ROAR.utilities_module.module import Module
+from ROAR.utilities_module.utilities import get_ip
 
-
-def dump_buffer(s):
-    """ Emptying buffer frame """
-    while True:
-        seg, addr = s.recvfrom(MAX_DGRAM)
-        print(seg[0])
-        if struct.unpack("B", seg[0:1])[0] == 1:
-            print("finish emptying buffer")
-            break
+MAX_DGRAM = 9600
 
 
-def main():
-    """ Getting image udp frame &
-    concate before decode and output image """
+class UDPStreamer(Module):
+    def save(self, **kwargs):
+        pass
 
-    # Set up socket
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.bind(('192.168.1.4', 12345))
-    dat = b''
-    dump_buffer(s)
+    def __init__(self, pc_port=8001, **kwargs):
+        super().__init__(**kwargs)
+        self.logger = logging.getLogger(f"{self.name}")
+        self.pc_port = pc_port
+        self.ios_addr = None
+        self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.s.bind((get_ip(), self.pc_port))
+        self.logs = [dict(), dict()]
+        self.counter = 0
 
-    while True:
-        seg, addr = s.recvfrom(MAX_DGRAM)
-        if struct.unpack("B", seg[0:1])[0] > 1:
-            dat += seg[1:]
-        else:
-            dat += seg[1:]
-            img = cv2.imdecode(np.frombuffer(dat, dtype=np.uint8), cv2.IMREAD_UNCHANGED)
-            try:
-                cv2.imshow('frame', img)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
-            except Exception as e:
-                print(e)
-            dat = b''
+    def connect(self):
+        seg, self.ios_addr = self.s.recvfrom(MAX_DGRAM)
+        self.logger.debug(f"Server started on {(get_ip(), self.pc_port)}")
 
-    # cap.release()
-    cv2.destroyAllWindows()
-    s.close()
+    def dump_buffer(self):
+        while True:
+            seg, addr = self.s.recvfrom(MAX_DGRAM)
+            prefix_num = int(seg[0:3].decode('ascii'))
+            total_num = int(seg[3:6].decode('ascii'))
+            curr_buffer = int(seg[6:9].decode('ascii'))
+            if prefix_num == total_num:
+                # self.logger.debug("finish emptying buffer")
+                break
+
+    def recv(self) -> bytes:
+        buffer_num = -1
+        log = dict()
+        while True:
+            seg, addr = self.s.recvfrom(MAX_DGRAM)
+            prefix_num = int(seg[0:3].decode('ascii'))
+            total_num = int(seg[3:6].decode('ascii'))
+            curr_buffer = int(seg[6:9].decode('ascii'))
+
+            # print(f"BEFORE curr_buff = {curr_buffer} | prefix_num = {prefix_num} "
+            #       f"| total_num = {total_num} | len(log) = {len(log)}")
+            if buffer_num == -1:
+                # initializing
+                buffer_num = curr_buffer
+                if prefix_num != 0:
+                    # if the first one is not the starting byte, dump it.
+                    self.dump_buffer()
+                    buffer_num = -1
+                    log = dict()
+                else:
+                    # if the first one is the starting byte, start recording
+                    log[prefix_num] = seg[9:]
+            else:
+                if prefix_num in log:
+                    # if i received a frame from another sequence
+                    self.dump_buffer()
+                    buffer_num = -1
+                    log = dict()
+                else:
+                    log[prefix_num] = seg[9:]
+            # print(f"AFTER curr_buff = {curr_buffer} | prefix_num = {prefix_num} | total_num = {total_num} "
+            #       f"| len(log) = {len(log)} | log.keys = {list(sorted(log.keys()))}")
+
+            if len(log) - 1 == total_num:
+                data = b''
+                for k in sorted(log.keys()):
+                    data += log[k]
+                return data
+
+    def send(self, data:str):
+        if self.counter % 1000 == 0:
+            seg, self.ios_addr = self.s.recvfrom(MAX_DGRAM)
+        self.s.sendto(data.encode('utf-8'), self.ios_addr)
+        self.counter += 1
+
+    def shutdown(self):
+        super(UDPStreamer, self).shutdown()
+        self.s.close()
 
 
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    import numpy as np
+
+    logging.basicConfig(format='%(levelname)s - %(asctime)s - %(name)s '
+                               '- %(message)s',
+                        datefmt="%H:%M:%S",
+                        level=logging.DEBUG)
+    udp_streamer = UDPStreamer(pc_port=8004)
+    try:
+        # udp_streamer.connect()
+        while True:
+            start = time.time()
+            udp_streamer.send("1500,1500")
+    except Exception as e:
+        print(e)
+        print("handling gracefully")
+        udp_streamer.shutdown()

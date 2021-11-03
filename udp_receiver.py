@@ -20,12 +20,21 @@ class UDPStreamer(Module):
         self.logger = logging.getLogger(f"{self.name}")
         self.pc_port = pc_port
         self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.s.bind((get_ip(), self.pc_port))
+        self.s.settimeout(1)
+        self.counter = 0
+        self.ios_addr = None
         self.logs = [dict(), dict()]
 
     def connect(self):
-        # self.dump_buffer()
-        self.logger.info("Frame aligned")
+        self.s.bind((get_ip(), self.pc_port))
+        self.logger.debug(f"Server started on {(get_ip(), self.pc_port)}. Waiting for client...")
+        while True:
+            try:
+                _ = self.s.recv(9600)
+                self.logger.debug("Client Found!")
+                break
+            except socket.timeout as e:
+                self.logger.error(f"{e} Waiting for client...")
 
     def dump_buffer(self):
         while True:
@@ -70,7 +79,7 @@ class UDPStreamer(Module):
             # print(f"AFTER curr_buff = {curr_buffer} | prefix_num = {prefix_num} | total_num = {total_num} "
             #       f"| len(log) = {len(log)} | log.keys = {list(sorted(log.keys()))}")
 
-            if len(log)-1 == total_num:
+            if len(log) - 1 == total_num:
                 data = b''
                 for k in sorted(log.keys()):
                     data += log[k]
@@ -91,6 +100,12 @@ class UDPStreamer(Module):
     #         else:
     #             dat += seg[9:]
 
+    def _send_data(self, data: str):
+        if self.counter % 1000 == 0:
+            seg, self.ios_addr = self.s.recvfrom(MAX_DGRAM)
+        self.s.sendto(data.encode('utf-8'), self.ios_addr)
+        self.counter += 1
+
     def shutdown(self):
         super(UDPStreamer, self).shutdown()
         self.s.close()
@@ -100,6 +115,7 @@ if __name__ == '__main__':
     import numpy as np
     import cv2
     import struct
+
     logging.basicConfig(format='%(levelname)s - %(asctime)s - %(name)s '
                                '- %(message)s',
                         datefmt="%H:%M:%S",
@@ -112,7 +128,6 @@ if __name__ == '__main__':
         d = np.frombuffer(data, dtype=np.float32)
         print(d)
         print(1 / (time.time() - start))
-
 
         """
         Receiving RGB
