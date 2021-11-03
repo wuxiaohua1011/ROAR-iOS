@@ -101,10 +101,14 @@ class UDPStreamer(Module):
     #             dat += seg[9:]
 
     def _send_data(self, data: str):
-        if self.counter % 1000 == 0:
+        try:
             seg, self.ios_addr = self.s.recvfrom(MAX_DGRAM)
-        self.s.sendto(data.encode('utf-8'), self.ios_addr)
-        self.counter += 1
+            self.s.sendto(data.encode('utf-8'), self.ios_addr)
+            self.counter += 1
+        except socket.timeout:
+            pass
+        except Exception as e:
+            self.logger.error(e)
 
     def shutdown(self):
         super(UDPStreamer, self).shutdown()

@@ -19,7 +19,7 @@ class UDPStreamer(Module):
         super().__init__(**kwargs)
         self.logger = logging.getLogger(f"{self.name}")
         self.pc_port = pc_port
-        self.ios_addr = None
+        self.ios_addr = ("192.168.1.15", 8004)
         self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.s.bind((get_ip(), self.pc_port))
         self.logs = [dict(), dict()]
@@ -81,7 +81,7 @@ class UDPStreamer(Module):
     def send(self, data:str):
         if self.counter % 1000 == 0:
             seg, self.ios_addr = self.s.recvfrom(MAX_DGRAM)
-        self.s.sendto(data.encode('utf-8'), self.ios_addr)
+        self.s.sendto(data.encode('utf-8'), ("192.168.1.15", 8004))
         self.counter += 1
 
     def shutdown(self):
@@ -101,7 +101,7 @@ if __name__ == '__main__':
         # udp_streamer.connect()
         while True:
             start = time.time()
-            udp_streamer.send("1500,1500")
+            udp_streamer.send("0.5, 0.5")
     except Exception as e:
         print(e)
         print("handling gracefully")
