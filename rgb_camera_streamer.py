@@ -7,10 +7,9 @@ MAX_DGRAM = 9600
 
 
 class RGBCamStreamer(UDPStreamer):
-    def __init__(self, resize: Optional[Tuple[int, int]] = None, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.curr_image: Optional[np.ndarray] = None
-        self.resize = resize
         self.intrinsics: Optional[np.ndarray] = None
 
     def run_in_series(self, **kwargs):
