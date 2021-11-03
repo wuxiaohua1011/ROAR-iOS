@@ -8,7 +8,7 @@ sys.path.append(Path(os.getcwd()).parent.as_posix())
 from ROAR.utilities_module.module import Module
 from ROAR.utilities_module.utilities import get_ip
 
-MAX_DGRAM = 9600
+MAX_DGRAM = 9620
 
 
 class UDPStreamer(Module):
@@ -47,6 +47,34 @@ class UDPStreamer(Module):
                 break
 
     def recv(self) -> bytes:
+        """
+        If we have a really large data, we are going to chunk it and send it. Since iOS platform can only handle
+        a maximum size of 9620, we use 9600 for each chunk here to make some room for extra header.
+
+        So on the sender's side, the chunk size <= 9200 bytes of data + 3 + 3 + 3 bytes of header
+        On the receiver's side, the chunk size <= 9200 bytes of data + 3 + 3 + 3 bytes of header
+
+        And therefore, our buffer must be set to a number that is greater than or equal to 9209. We will take 9600
+
+        ----------
+        |  9600  |
+        |--------|
+        |  9600  |
+        |--------|
+        ...
+
+
+        Each chunk is going to be structured like this:
+        XXXYYYZZZDATA
+
+        where XXX == 3 bytes long int encoded in ascii representing prefix num
+        where YYY == 3 bytes long int encoded in ascii representing total num
+        where ZZZ == 3 bytes long int encoded in ascii curr_buffer
+        where DATA represent the actual data
+
+        Returns:
+
+        """
         buffer_num = -1
         log = dict()
         while True:
