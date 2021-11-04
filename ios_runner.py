@@ -10,7 +10,7 @@ from typing import Optional, Tuple
 from ROAR_iOS.manual_control import ManualControl
 from ROAR_iOS.depth_cam_streamer import DepthCamStreamer
 from ROAR_iOS.rgb_camera_streamer import RGBCamStreamer
-from ROAR_iOS.transform_streamer import TransformStreamer
+from ROAR_iOS.transform_streamer import VehicleStateStreamer
 from ROAR_iOS.control_streamer import ControlStreamer
 import numpy as np
 import cv2
@@ -53,10 +53,10 @@ class iOSRunner:
                                                    threaded=True,
                                                    update_interval=0.1,
                                                    )
-        self.transform_streamer = TransformStreamer(host=self.ios_config.ios_ip_addr,
-                                                    port=self.ios_config.ios_port,
-                                                    name=self.ios_config.transform_route_name,
-                                                    update_interval=0.01)
+        self.vehicle_state_streamer = VehicleStateStreamer(host=self.ios_config.ios_ip_addr,
+                                                           port=self.ios_config.ios_port,
+                                                           name=self.ios_config.transform_route_name,
+                                                           update_interval=0.01)
         self.control_streamer = ControlStreamer(host=self.ios_config.ios_ip_addr,
                                                 port=self.ios_config.ios_port,
                                                 name=self.ios_config.control_route_name)
@@ -123,10 +123,10 @@ class iOSRunner:
         else:
             self.world_cam_streamer.connect()
             self.depth_cam_streamer.connect()
-            self.transform_streamer.connect()
+            self.vehicle_state_streamer.connect()
             self.agent.add_threaded_module(self.world_cam_streamer)
             self.agent.add_threaded_module(self.depth_cam_streamer)
-            self.agent.add_threaded_module(self.transform_streamer)
+            self.agent.add_threaded_module(self.vehicle_state_streamer)
 
         try:
             self.agent.start_module_threads()
@@ -202,7 +202,9 @@ class iOSRunner:
                 )
             vehicle = self.ios_bridge.convert_vehicle_from_source_to_agent(
                 {
-                    "transform": self.transform_streamer.transform,
+                    "transform": self.vehicle_state_streamer.transform,
+                    "velocity": self.vehicle_state_streamer.velocity
+
                 }
             )
             current_time = time.time()
