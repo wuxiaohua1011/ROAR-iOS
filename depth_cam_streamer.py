@@ -32,7 +32,7 @@ class DepthCamStreamer(UDPStreamer):
             ])
             img = np.frombuffer(img_data, dtype=np.float32)
             if img is not None:
-                self.curr_image = np.rot90(img.reshape((192, 256)), k=-1)
+                self.curr_image = np.rot90(img.reshape((144, 256)), k=-1)
 
         except OSError:
             self.should_continue_threaded = False

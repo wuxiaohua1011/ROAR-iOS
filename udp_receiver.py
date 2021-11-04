@@ -188,7 +188,7 @@ if __name__ == '__main__':
         #     continue
         # else:
         #     try:
-        #         img = np.rot90(img.reshape((192, 256)), k=-1)
+        #         img = np.rot90(img.reshape((144, 256)), k=-1)
         #         cv2.imshow("img", img)
         #         cv2.waitKey(1)
         #         # print(f"{time.time()} Image received")
