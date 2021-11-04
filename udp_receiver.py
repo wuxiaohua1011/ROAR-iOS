@@ -29,13 +29,13 @@ class UDPStreamer(Module):
     def connect(self):
         self.s.bind((get_ip(), self.pc_port))
         self.logger.debug(f"Server started on {(get_ip(), self.pc_port)}. Waiting for client...")
-        while True:
-            try:
-                _ = self.s.recv(9600)
-                self.logger.debug("Client Found!")
-                break
-            except socket.timeout as e:
-                self.logger.error(f"{e} Waiting for client...")
+        # while True:
+        #     try:
+        #         _ = self.s.recv(9600)
+        #         self.logger.debug("Client Found!")
+        #         break
+        #     except socket.timeout as e:
+        #         self.logger.error(f"{e} Waiting for client...")
 
     def dump_buffer(self):
         while True:
