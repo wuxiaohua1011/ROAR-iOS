@@ -7,6 +7,7 @@ import time
 sys.path.append(Path(os.getcwd()).parent.as_posix())
 from ROAR.utilities_module.module import Module
 from ROAR.utilities_module.utilities import get_ip
+from collections import defaultdict
 
 MAX_DGRAM = 9620
 
@@ -23,7 +24,7 @@ class UDPStreamer(Module):
         self.s.settimeout(1)
         self.counter = 0
         self.ios_addr = None
-        self.logs = [dict(), dict()]
+        self.logs = defaultdict(dict)
 
     def connect(self):
         self.s.bind((get_ip(), self.pc_port))
@@ -115,19 +116,6 @@ class UDPStreamer(Module):
                 return data
             # print()
 
-    # def recv_naive(self) -> bytes:
-    #     dat = b''
-    #     while True:
-    #         seg, addr = self.s.recvfrom(MAX_DGRAM)
-    #         prefix_num = int(seg[0:3].decode('ascii'))
-    #         total_num = int(seg[3:6].decode('ascii'))
-    #         curr_buffer = int(seg[6:9].decode('ascii'))
-    #         if prefix_num == total_num:
-    #             dat += seg[9:]
-    #             return dat
-    #         else:
-    #             dat += seg[9:]
-
     def _send_data(self, data: str):
         try:
             seg, self.ios_addr = self.s.recvfrom(MAX_DGRAM)
@@ -152,35 +140,34 @@ if __name__ == '__main__':
                                '- %(message)s',
                         datefmt="%H:%M:%S",
                         level=logging.DEBUG)
-    udp_streamer = UDPStreamer(pc_port=8003)
+    udp_streamer = UDPStreamer(pc_port=8001)
     udp_streamer.connect()
     while True:
         start = time.time()
+        # print("about to recv")
         data = udp_streamer.recv()
-        d = np.frombuffer(data, dtype=np.float32)
-        print(d)
-        print(1 / (time.time() - start))
+        # d = np.frombuffer(data, dtype=np.float32)
+        # print(d)
+        # print(1 / (time.time() - start))
 
-        """
-        Receiving RGB
-        
-        # img_data = data[16:]
-        # img = np.frombuffer(img_data, dtype=np.uint8)
-        # img = cv2.imdecode(img, cv2.IMREAD_UNCHANGED)
-        # 
-        # if img is None:
-        #     print("OH NO")
-        # 
-        # if img is not None:
-        #     try:
-        #         cv2.imshow("img", cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE))
-        #         k = cv2.waitKey(1) & 0xff
-        #         if k == ord('q') or k == 27:
-        #             break
-        #         # print(f"{1 / (time.time() - start)} Image received")
-        #     except Exception as e:
-        #         print(e)
-        """
+        # Receiving RGB
+        img_data = data[16:]
+        img = np.frombuffer(img_data, dtype=np.uint8)
+        img = cv2.imdecode(img, cv2.IMREAD_UNCHANGED)
+
+        if img is None:
+            print("OH NO")
+
+        if img is not None:
+            try:
+                cv2.imshow("img", cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE))
+                k = cv2.waitKey(1) & 0xff
+                if k == ord('q') or k == 27:
+                    break
+                # print(f"{1 / (time.time() - start)} Image received")
+            except Exception as e:
+                print(e)
+
 
         """
         Receiving depth
