@@ -32,17 +32,17 @@ class iOSRunner:
         self.setup_pygame()
         self.world_cam_streamer = RGBCamStreamer(pc_port=8001,
                                                  name="world_rgb_streamer",
-                                                 update_interval=0.025,
+                                                 update_interval=0.01,
                                                  threaded=True)
         self.depth_cam_streamer = DepthCamStreamer(name=self.ios_config.depth_cam_route_name,
                                                    threaded=True,
-                                                   update_interval=0.025,
+                                                   update_interval=0.01,
                                                    pc_port=8002
                                                    )
         self.veh_state_streamer = VehicleStateStreamer(pc_port=8003,
                                                        threaded=True,
                                                        name="vehicle_state_streamer",
-                                                       update_interval=0.025)
+                                                       update_interval=0.01)
         self.control_streamer = ControlStreamer(pc_port=8004,
                                                 threaded=False,
                                                 name="control_streamer")

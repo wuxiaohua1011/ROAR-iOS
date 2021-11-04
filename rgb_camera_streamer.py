@@ -1,8 +1,16 @@
+import time
 from typing import List, Optional, Tuple, List
 import cv2
 import numpy as np
+import sys, os
+from pathlib import Path
+import time
+
+sys.path.append(Path(os.getcwd()).parent.as_posix())
 from ROAR_iOS.udp_receiver import UDPStreamer
 import struct
+from collections import deque
+
 MAX_DGRAM = 9600
 
 
@@ -26,6 +34,7 @@ class RGBCamStreamer(UDPStreamer):
                 [0, fy, cy],
                 [0, 0, 1]
             ])
+
             img = np.frombuffer(img_data, dtype=np.uint8)
             img = cv2.imdecode(img, cv2.IMREAD_UNCHANGED)
             if img is not None:
@@ -38,5 +47,15 @@ class RGBCamStreamer(UDPStreamer):
 
 
 if __name__ == '__main__':
-    ir_image_server = RGBCamStreamer(ios_addr="10.142.143.48", ios_port=8005, name="world_cam")
-    ir_image_server.run_in_series()
+    ir_image_server = RGBCamStreamer(pc_port=8001,
+                                     name="world_rgb_streamer",
+                                     update_interval=0.025,
+                                     threaded=True)
+    ir_image_server.connect()
+    while True:
+        ir_image_server.run_in_series()
+        if ir_image_server.curr_image is not None:
+            img = ir_image_server.curr_image
+            cv2.imshow("img", cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE))
+            cv2.waitKey(1)
+    # ir_image_server.run_in_series()

@@ -2,6 +2,8 @@ from typing import List, Optional, Tuple, List
 import numpy as np
 from ROAR_iOS.udp_receiver import UDPStreamer
 import struct
+import time
+
 MAX_DGRAM = 9600
 
 
@@ -15,6 +17,7 @@ class DepthCamStreamer(UDPStreamer):
     def run_in_series(self, **kwargs):
 
         try:
+
             data = self.recv()
             img_data = data[32:]
             intrinsics = data[0:32]
@@ -30,6 +33,7 @@ class DepthCamStreamer(UDPStreamer):
             img = np.frombuffer(img_data, dtype=np.float32)
             if img is not None:
                 self.curr_image = np.rot90(img.reshape((192, 256)), k=-1)
+
         except OSError:
             self.should_continue_threaded = False
         except Exception as e:
