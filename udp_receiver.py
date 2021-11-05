@@ -3,6 +3,7 @@ import socket
 import sys, os
 from pathlib import Path
 import time
+from typing import Optional
 
 sys.path.append(Path(os.getcwd()).parent.as_posix())
 from ROAR.utilities_module.module import Module
@@ -21,23 +22,13 @@ class UDPStreamer(Module):
         self.logger = logging.getLogger(f"{self.name}")
         self.ios_addr = ios_address
         self.port = port
-        self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.s.settimeout(0.1)
+        self.s: Optional[socket.socket] = None
+        self.start_socket()
         self.counter = 0
         self.logs = defaultdict(dict)
 
     def connect(self):
         pass
-        # self.s.bind((get_ip(), self.pc_port))
-        # self.s.sendto(b'ack', address=(self.ios_addr, self.port))
-        # self.logger.debug(f"Server started on {(get_ip(), self.port)}. Waiting for client...")
-        # while True:
-        #     try:
-        #         _ = self.s.recv(9600)
-        #         self.logger.debug("Client Found!")
-        #         break
-        #     except socket.timeout as e:
-        #         self.logger.error(f"{e} Waiting for client...")
 
     def dump_buffer(self):
         while True:
@@ -78,53 +69,69 @@ class UDPStreamer(Module):
         Returns:
 
         """
+        debug_port = 8001
         buffer_num = -1
         log = dict()
+        if self.port == debug_port:
+            print("sending ack")
         self.s.sendto(b'ack', (self.ios_addr, self.port))
+        if self.port == debug_port: print("ack sent")
         while True:
-            seg, addr = self.s.recvfrom(MAX_DGRAM)
-            prefix_num = int(seg[0:3].decode('ascii'))
-            total_num = int(seg[3:6].decode('ascii'))
-            curr_buffer = int(seg[6:9].decode('ascii'))
-
-            # print(f"BEFORE curr_buff = {curr_buffer} | prefix_num = {prefix_num} "
-            #       f"| total_num = {total_num} | len(log) = {len(log)}")
-            if buffer_num == -1:
-                # initializing
-                buffer_num = curr_buffer
-                if prefix_num != 0:
-                    # if the first one is not the starting byte, dump it.
-                    self.dump_buffer()
-                    buffer_num = -1
-                    log = dict()
+            try:
+                if self.port == debug_port: print(f"{time.time()}: about to receive")
+                seg, addr = self.s.recvfrom(MAX_DGRAM)
+                if self.port == debug_port: print("recevd")
+                prefix_num = int(seg[0:3].decode('ascii'))
+                total_num = int(seg[3:6].decode('ascii'))
+                curr_buffer = int(seg[6:9].decode('ascii'))
+                if buffer_num == -1:
+                    # initializing
+                    buffer_num = curr_buffer
+                    if prefix_num != 0:
+                        # if the first one is not the starting byte, dump it.
+                        buffer_num = -1
+                        log = dict()
+                    else:
+                        # if the first one is the starting byte, start recording
+                        log[prefix_num] = seg[9:]
                 else:
-                    # if the first one is the starting byte, start recording
-                    log[prefix_num] = seg[9:]
-            else:
-                if prefix_num in log:
-                    # if i received a frame from another sequence
-                    self.dump_buffer()
-                    buffer_num = -1
-                    log = dict()
-                else:
-                    log[prefix_num] = seg[9:]
-            # print(f"AFTER curr_buff = {curr_buffer} | prefix_num = {prefix_num} | total_num = {total_num} "
-            #       f"| len(log) = {len(log)} | log.keys = {list(sorted(log.keys()))}")
+                    if prefix_num in log:
+                        # if i received a frame from another sequence
+                        buffer_num = -1
+                        log = dict()
+                    else:
+                        log[prefix_num] = seg[9:]
+                if self.port == debug_port:
+                    print(len(log) - 1 == total_num, log.keys())
 
-            if len(log) - 1 == total_num:
-                data = b''
-                for k in sorted(log.keys()):
-                    data += log[k]
-                # print()
-                return data
-            # print()
+                if len(log) - 1 == total_num:
+                    data = b''
+                    for k in sorted(log.keys()):
+                        data += log[k]
+                    print("successfully received everything")
+                    print()
+                    return data
+            except socket.timeout as e:
+                if self.port == debug_port:
+                    print(f"{debug_port} error while receiving: {e}... Restarting socket")
+                self.restart_socket()
+                self.s.sendto(b'ack', (self.ios_addr, self.port))
+
+    def restart_socket(self):
+        if self.s is not None:
+            self.s.close()
+        self.start_socket()
+
+    def start_socket(self):
+        self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.s.settimeout(0.1)
 
     def _send_data(self, data: str):
         try:
             self.s.sendto(data.encode('utf-8'), (self.ios_addr, self.port))
             self.counter += 1
         except socket.timeout:
-            pass
+            print("timed out")
         except Exception as e:
             self.logger.error(e)
 
@@ -169,7 +176,6 @@ if __name__ == '__main__':
                 # print(f"{1 / (time.time() - start)} Image received")
             except Exception as e:
                 print(e)
-
 
         """
         Receiving depth
