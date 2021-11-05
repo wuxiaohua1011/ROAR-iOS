@@ -20,11 +20,8 @@ class DepthCamStreamer(UDPStreamer):
         self.intrinsics: Optional[np.ndarray] = None
 
     def run_in_series(self, **kwargs):
-
         try:
-            start = time.time()
             data = self.recv()
-            print(f"depth received -> {1 / (time.time() - start)}")
             img_data = data[16:]
             intrinsics = data[0:16]
             fx, fy, cx, cy = struct.unpack('f', intrinsics[0:4])[0], \
@@ -50,7 +47,7 @@ if __name__ == '__main__':
     ir_image_server = DepthCamStreamer(ios_address="10.0.0.26",
                                        port=8002,
                                        name="world_depth_streamer",
-                                       update_interval=0.025,
+                                       update_interval=0.05,
                                        threaded=True)
     # ir_image_server.connect()
     while True:

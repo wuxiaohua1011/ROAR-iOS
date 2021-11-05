@@ -28,8 +28,8 @@ class ControlStreamer(UDPStreamer):
 
 if __name__ == '__main__':
     cs = ControlStreamer(pc_port=8004,
-                        threaded=False,
-                        name="control_streamer")
+                         threaded=False,
+                         name="control_streamer")
     cs.connect()
     while True:
         cs.send(VehicleControl(throttle=1, steering=1))

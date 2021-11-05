@@ -22,7 +22,7 @@ class UDPStreamer(Module):
         self.ios_addr = ios_address
         self.port = port
         self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.s.settimeout(1)
+        self.s.settimeout(0.1)
         self.counter = 0
         self.logs = defaultdict(dict)
 
