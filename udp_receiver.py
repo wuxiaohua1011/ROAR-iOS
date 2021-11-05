@@ -16,19 +16,21 @@ class UDPStreamer(Module):
     def save(self, **kwargs):
         pass
 
-    def __init__(self, pc_port=8001, **kwargs):
+    def __init__(self, ios_address, port=8001, **kwargs):
         super().__init__(**kwargs)
         self.logger = logging.getLogger(f"{self.name}")
-        self.pc_port = pc_port
+        self.ios_addr = ios_address
+        self.port = port
         self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.s.settimeout(1)
         self.counter = 0
-        self.ios_addr = None
         self.logs = defaultdict(dict)
 
     def connect(self):
-        self.s.bind((get_ip(), self.pc_port))
-        self.logger.debug(f"Server started on {(get_ip(), self.pc_port)}. Waiting for client...")
+        pass
+        # self.s.bind((get_ip(), self.pc_port))
+        # self.s.sendto(b'ack', address=(self.ios_addr, self.port))
+        # self.logger.debug(f"Server started on {(get_ip(), self.port)}. Waiting for client...")
         # while True:
         #     try:
         #         _ = self.s.recv(9600)
@@ -78,6 +80,7 @@ class UDPStreamer(Module):
         """
         buffer_num = -1
         log = dict()
+        self.s.sendto(b'ack', (self.ios_addr, self.port))
         while True:
             seg, addr = self.s.recvfrom(MAX_DGRAM)
             prefix_num = int(seg[0:3].decode('ascii'))
@@ -118,8 +121,7 @@ class UDPStreamer(Module):
 
     def _send_data(self, data: str):
         try:
-            seg, self.ios_addr = self.s.recvfrom(MAX_DGRAM)
-            self.s.sendto(data.encode('utf-8'), self.ios_addr)
+            self.s.sendto(data.encode('utf-8'), (self.ios_addr, self.port))
             self.counter += 1
         except socket.timeout:
             pass
@@ -140,7 +142,7 @@ if __name__ == '__main__':
                                '- %(message)s',
                         datefmt="%H:%M:%S",
                         level=logging.DEBUG)
-    udp_streamer = UDPStreamer(pc_port=8001)
+    udp_streamer = UDPStreamer(port=8001)
     udp_streamer.connect()
     while True:
         start = time.time()
