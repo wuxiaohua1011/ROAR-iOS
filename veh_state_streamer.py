@@ -19,6 +19,8 @@ class VehicleStateStreamer(UDPStreamer):
     def run_in_series(self, **kwargs):
         try:
             data = self.recv()
+            if data is None:
+                return 
             d = [float(s) for s in data.decode('utf-8').split(",")]
             # d = np.frombuffer(data, dtype=np.float32)
             self.transform.location.x = d[0]

@@ -30,17 +30,7 @@ class UDPStreamer(Module):
     def connect(self):
         pass
 
-    def dump_buffer(self):
-        while True:
-            seg, addr = self.s.recvfrom(MAX_DGRAM)
-            prefix_num = int(seg[0:3].decode('ascii'))
-            total_num = int(seg[3:6].decode('ascii'))
-            curr_buffer = int(seg[6:9].decode('ascii'))
-            if prefix_num == total_num:
-                # self.logger.debug("finish emptying buffer")
-                break
-
-    def recv(self) -> bytes:
+    def recv(self) -> Optional[bytes]:
         """
         If we have a really large data, we are going to chunk it and send it. Since iOS platform can only handle
         a maximum size of 9620, we use 9600 for each chunk here to make some room for extra header.
@@ -69,23 +59,20 @@ class UDPStreamer(Module):
         Returns:
 
         """
-        debug_port = 8001
         buffer_num = -1
         log = dict()
-        if self.port == debug_port:
-            print("sending ack")
+        # this command might not be received.
+        # If not received, it will cause s.recfrom to timeout, which will lead to restart of socket & return None
+        # If received, server will attempt to send data over in chunk as specified above
         self.s.sendto(b'ack', (self.ios_addr, self.port))
-        if self.port == debug_port: print("ack sent")
         while True:
             try:
-                if self.port == debug_port: print(f"{time.time()}: about to receive")
-                seg, addr = self.s.recvfrom(MAX_DGRAM)
-                if self.port == debug_port: print("recevd")
+                seg, addr = self.s.recvfrom(MAX_DGRAM)  # this command might timeout
                 prefix_num = int(seg[0:3].decode('ascii'))
                 total_num = int(seg[3:6].decode('ascii'))
                 curr_buffer = int(seg[6:9].decode('ascii'))
                 if buffer_num == -1:
-                    # initializing
+                    # initializing receiving sequence
                     buffer_num = curr_buffer
                     if prefix_num != 0:
                         # if the first one is not the starting byte, dump it.
@@ -100,22 +87,20 @@ class UDPStreamer(Module):
                         buffer_num = -1
                         log = dict()
                     else:
+                        # if all checks passed, add it to the running recording of the data.
                         log[prefix_num] = seg[9:]
-                if self.port == debug_port:
-                    print(len(log) - 1 == total_num, log.keys())
 
                 if len(log) - 1 == total_num:
                     data = b''
                     for k in sorted(log.keys()):
                         data += log[k]
-                    print("successfully received everything")
-                    print()
                     return data
             except socket.timeout as e:
-                if self.port == debug_port:
-                    print(f"{debug_port} error while receiving: {e}... Restarting socket")
+                # if socket times out
+                #   1. due to send ack not received, therefore server not sending data
+                #   2. just lost packet causing not all packets are received
                 self.restart_socket()
-                self.s.sendto(b'ack', (self.ios_addr, self.port))
+                return None
 
     def restart_socket(self):
         if self.s is not None:

@@ -22,6 +22,8 @@ class DepthCamStreamer(UDPStreamer):
     def run_in_series(self, **kwargs):
         try:
             data = self.recv()
+            if data is None:
+                return
             img_data = data[16:]
             intrinsics = data[0:16]
             fx, fy, cx, cy = struct.unpack('f', intrinsics[0:4])[0], \
