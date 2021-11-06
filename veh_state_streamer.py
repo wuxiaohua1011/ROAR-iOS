@@ -15,6 +15,7 @@ class VehicleStateStreamer(UDPStreamer):
         super().__init__(**kwargs)
         self.transform = Transform()
         self.velocity = Vector3D()
+        self.acceleration = Vector3D()
 
     def run_in_series(self, **kwargs):
         try:
@@ -32,6 +33,9 @@ class VehicleStateStreamer(UDPStreamer):
             self.velocity.x = d[6]
             self.velocity.y = d[7]
             self.velocity.z = d[8]
+            self.acceleration.x = d[9]
+            self.acceleration.y = d[10]
+            self.acceleration.z = d[11]
 
         except Exception as e:
             self.logger.error(e)

@@ -179,7 +179,8 @@ class iOSRunner:
             vehicle = self.ios_bridge.convert_vehicle_from_source_to_agent(
                 {
                     "transform": self.veh_state_streamer.transform,
-                    "velocity": self.veh_state_streamer.velocity
+                    "velocity": self.veh_state_streamer.velocity,
+                    "acceleration": self.veh_state_streamer.acceleration
                 }
             )
             vehicle.control = self.control_streamer.control_tx
@@ -252,14 +253,29 @@ class iOSRunner:
 
     def display_system_status(self, frame: np.ndarray):
         if frame is not None:
-            frame = cv2.putText(img=frame, text=f"{self.agent.vehicle.transform}", org=(20, frame.shape[0] - 20),
+            frame = cv2.putText(img=frame, text=f"{self.agent.vehicle.transform.location.__str__()}", org=(20, 20),
                                 fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.6,
                                 color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
+            frame = cv2.putText(img=frame, text=f"{self.agent.vehicle.transform.rotation.__str__()}", org=(20, 40),
+                                fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.6,
+                                color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
+            frame = cv2.putText(img=frame, text=f"vx: {round(self.agent.vehicle.velocity.x, 3)}, "
+                                                f"vy: {round(self.agent.vehicle.velocity.y, 3)}, "
+                                                f"vz: {round(self.agent.vehicle.velocity.z, 3)}", org=(20, 60),
+                                fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.6,
+                                color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
+
+            frame = cv2.putText(img=frame, text=f"ax: {round(self.agent.vehicle.acceleration.x, 3)}, "
+                                                f"ay: {round(self.agent.vehicle.acceleration.y, 3)}, "
+                                                f"az: {round(self.agent.vehicle.acceleration.z, 3)}", org=(20, 80),
+                                fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.6,
+                                color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
+
             frame = cv2.putText(img=frame,
                                 text=f"{self.control_streamer.control_tx} | "
                                      f"max_throttle = {round(self.ios_config.max_throttle, 3)} | "
                                      f"max_steering = {round(self.ios_config.max_steering, 3)}",
-                                org=(20, frame.shape[0] - 40), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.6,
+                                org=(20, frame.shape[0] - 20), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.6,
                                 color=(0, 255, 0),  # BGR
                                 thickness=1, lineType=cv2.LINE_AA)
 
