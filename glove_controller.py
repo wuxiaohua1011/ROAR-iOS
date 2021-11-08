@@ -117,4 +117,4 @@ class GloveControl:
 
             steering = -1 * process_val(roll, offset=self.steering_offset, min_val=-60, max_val=60)
             throttle = process_val(new_pitch, offset=self.throttle_offset, min_val=-60, max_val=60)
-        return should_continue, VehicleControl(throttle=throttle, steering=steering)
+        return True, VehicleControl(throttle=throttle, steering=steering)
