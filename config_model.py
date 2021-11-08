@@ -21,3 +21,6 @@ class iOSConfig(BaseModel):
     pygame_display_height: int = Field(810)
 
     should_display_system_status: bool = True
+
+    should_use_glove: bool = Field(default=False)
+    glove_ip_addr: str = Field(default="192.168.1.30")

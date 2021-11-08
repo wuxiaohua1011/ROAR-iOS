@@ -4,23 +4,39 @@
 #include <Adafruit_GFX.h>
 #include <Wire.h>
 
+#include <WiFi.h>
+#include <WebServer.h>
+#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h>
+#include <esp32cam.h>
+
+
 #define I2C_SDA 14
 #define I2C_SCL 2
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 32 // OLED display height, in pixels
 
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+char* WIFI_SSID = "NETGEAR78";
+char* WIFI_PASS = "wuxiaohua1011";
 
+
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 Adafruit_MPU6050 mpu;
+AsyncWebServer wsServer(81);
+AsyncWebSocket websocket("/control");
+
+volatile float ax = 0;
+volatile float ay = 0;
+volatile float az = 0;
 
 void setup(void) {
   Serial.begin(115200);
-  while (!Serial)
-  delay(10); // will pause Zero, Leonardo, etc until serial console opens
   Wire.begin(I2C_SDA, I2C_SCL);
   setUpMPU6050();
   setupDisplay();
+  startWebserver();
+
   
 }
 
@@ -28,33 +44,54 @@ void loop() {
   /* Get new sensor events with the readings */
   sensors_event_t a, g, temp;
   mpu.getEvent(&a, &g, &temp);
+  ax = a.acceleration.x;
+  ay = a.acceleration.y;
+  az = a.acceleration.z;
 
   /* Print out the values */
-  String content = String("Acceleration: \n") + String(a.acceleration.x) + String(", ") + String(a.acceleration.y) + String(", ") + String(a.acceleration.z) + String("\n");
+  String content = String("Acceleration: \n") + 
+                   getAccelerometerReading(a) + String("\n") + 
+                   String("IP: ") + String(IpAddress2String(WiFi.localIP()));
+  Serial.println(content);
   printToDisplay(content);
-  Serial.print("Acceleration X: ");
-  Serial.print(a.acceleration.x);
-  Serial.print(", Y: ");
-  Serial.print(a.acceleration.y);
-  Serial.print(", Z: ");
-  Serial.print(a.acceleration.z);
-  Serial.println(" m/s^2");
-//
-//  Serial.print("Rotation X: ");
-//  Serial.print(g.gyro.x);
-//  Serial.print(", Y: ");
-//  Serial.print(g.gyro.y);
-//  Serial.print(", Z: ");
-//  Serial.print(g.gyro.z);
-//  Serial.println(" rad/s");
-//
-//  Serial.print("Temperature: ");
-//  Serial.print(temp.temperature);
-//  Serial.println(" degC");
-//
-//  Serial.println("");
 
 }
+
+
+String getAccelerometerReading(sensors_event_t a) {
+   return String(a.acceleration.x) + String(", ") + String(a.acceleration.y) + String(", ") + String(a.acceleration.z);
+}
+
+void notFound(AsyncWebServerRequest *request) {
+    request->send(404, "text/plain", "Not found");
+}
+
+
+void startWebserver(){
+  // delete old config
+  WiFi.disconnect(true);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  Serial.print("Attempting to connect ..");
+
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print(".");
+    delay(1000);
+  }
+  Serial.println("Success!");
+  Serial.print("IP Addr: ");
+  Serial.println(WiFi.localIP());
+
+
+  wsServer.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+        request->send(200, "text/plain",  String(ax) + String(",") + String(ay) + String(",") + String(az));
+    });
+
+  wsServer.onNotFound(notFound);
+  wsServer.begin();
+}
+
+
 
 void setupDisplay() {
   while(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
@@ -146,4 +183,12 @@ void setUpMPU6050() {
 
   Serial.println("");
   delay(100);
+}
+
+String IpAddress2String(const IPAddress& ipAddress)
+{
+  return String(ipAddress[0]) + String(".") +\
+  String(ipAddress[1]) + String(".") +\
+  String(ipAddress[2]) + String(".") +\
+  String(ipAddress[3])  ; 
 }

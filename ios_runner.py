@@ -8,6 +8,7 @@ import logging
 import pygame
 from typing import Optional, Tuple
 from ROAR_iOS.manual_control import ManualControl
+from ROAR_iOS.glove_controller import GloveControl
 from ROAR_iOS.depth_cam_streamer import DepthCamStreamer
 from ROAR_iOS.rgb_camera_streamer import RGBCamStreamer
 from ROAR_iOS.control_streamer import ControlStreamer
@@ -27,8 +28,8 @@ class iOSRunner:
         self.logger = logging.getLogger("iOS Runner")
         self.display: Optional[pygame.display] = None
         self.should_display_system_status = self.ios_config.should_display_system_status
-        self.controller = ManualControl(ios_config=ios_config)
-
+        self.controller = GloveControl(ios_config=ios_config) \
+            if self.ios_config.should_use_glove else ManualControl(ios_config=ios_config)
         self.setup_pygame()
 
         self.world_cam_streamer = RGBCamStreamer(ios_address=self.ios_config.ios_ip_addr,
@@ -124,9 +125,7 @@ class iOSRunner:
                 if auto_pilot:
                     control = self.ios_bridge.convert_control_from_agent_to_source(agent_control)
 
-                # since we can change max throttle on the xbox
-                self.ios_config.max_throttle = self.controller.max_throttle
-                self.ios_config.steering_offset = self.controller.steering_offset
+
                 control.throttle = np.clip(control.throttle, -self.ios_config.max_throttle,
                                            self.ios_config.max_throttle)
                 control.steering = np.clip(control.steering + self.ios_config.steering_offset,

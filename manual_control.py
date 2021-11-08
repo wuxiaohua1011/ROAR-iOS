@@ -6,10 +6,13 @@ import numpy as np
 from typing import Tuple
 from ROAR_iOS.config_model import iOSConfig
 import os, sys
+
+
 class ManualControl:
     def __init__(self, throttle_increment=0.05, steering_increment=0.05,
-                 ios_config:iOSConfig = iOSConfig):
+                 ios_config: iOSConfig = iOSConfig):
         self.logger = logging.getLogger(__name__)
+        self.ios_config = ios_config
         self._steering_increment = steering_increment
         self._throttle_increment = throttle_increment
         self.max_throttle = ios_config.max_throttle
@@ -57,13 +60,19 @@ class ManualControl:
                 hori, vert = self.joystick.get_hat(0)
                 if vert > 0:
                     self.max_throttle = np.clip(self.max_throttle + self.gear_throttle_step, 0, 1)
+                    self.ios_config.max_throttle = self.max_throttle
                 elif vert < 0:
                     self.max_throttle = np.clip(self.max_throttle - self.gear_throttle_step, 0, 1)
+                    self.ios_config.max_throttle = self.max_throttle
 
                 if hori > 0:
                     self.steering_offset = np.clip(self.steering_offset + self.gear_steering_step, -1, 1)
+                    self.ios_config.steering_offset = self.steering_offset
+
                 elif hori < 0:
                     self.steering_offset = np.clip(self.steering_offset - self.gear_steering_step, -1, 1)
+                    self.ios_config.steering_offset = self.steering_offset
+
 
         if self.use_joystick:
             self.throttle, self.steering = self._parse_joystick()
