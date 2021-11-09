@@ -184,11 +184,9 @@ class iOSRunner:
             )
             vehicle.control = self.control_streamer.control_tx
             if self.depth_cam_streamer.intrinsics is not None:
-                self.agent.front_depth_camera.intrinsics_matrix = self.depth_cam_streamer.intrinsics @ self. \
-                    agent.front_depth_camera.intrinsics_transformation
+                self.agent.front_depth_camera.intrinsics_matrix = self.depth_cam_streamer.intrinsics
             if self.world_cam_streamer.intrinsics is not None:
-                self.agent.front_rgb_camera.intrinsics_matrix = self.world_cam_streamer.intrinsics @ \
-                                                                self.agent.front_rgb_camera.intrinsics_transformation
+                self.agent.front_rgb_camera.intrinsics_matrix = self.world_cam_streamer.intrinsics
             return sensor_data, vehicle
         except Exception as e:
             self.logger.error(f"Cannot convert data: {e}")
