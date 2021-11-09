@@ -125,7 +125,6 @@ class iOSRunner:
                 if auto_pilot:
                     control = self.ios_bridge.convert_control_from_agent_to_source(agent_control)
 
-
                 control.throttle = np.clip(control.throttle, -self.ios_config.max_throttle,
                                            self.ios_config.max_throttle)
                 control.steering = np.clip(control.steering + self.ios_config.steering_offset,

@@ -17,7 +17,7 @@ class ControlStreamer(UDPStreamer):
         super(ControlStreamer, self).__init__(**kwargs)
         self.control_tx = VehicleControl()
 
-    def send(self, control:VehicleControl):
+    def send(self, control: VehicleControl):
         self.control_tx = control
         string_format = f"{control.throttle},{control.steering}"
         self._send_data(string_format)

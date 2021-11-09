@@ -21,7 +21,7 @@ class VehicleStateStreamer(UDPStreamer):
         try:
             data = self.recv()
             if data is None:
-                return 
+                return
             d = [float(s) for s in data.decode('utf-8').split(",")]
             # d = np.frombuffer(data, dtype=np.float32)
             self.transform.location.x = d[0]
@@ -39,12 +39,14 @@ class VehicleStateStreamer(UDPStreamer):
 
         except Exception as e:
             self.logger.error(e)
+
+
 if __name__ == '__main__':
     streamer = VehicleStateStreamer(ios_address="10.0.0.26",
-                                             port=8003,
-                                             name="VehicleStateStreamer",
-                                             update_interval=0.025,
-                                             threaded=True)
+                                    port=8003,
+                                    name="VehicleStateStreamer",
+                                    update_interval=0.025,
+                                    threaded=True)
     while True:
         streamer.run_in_series()
         print(streamer.transform, streamer.velocity)
