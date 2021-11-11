@@ -266,6 +266,12 @@ class iOSRunner:
                                                 f"az: {round(self.agent.vehicle.acceleration.z, 3)}", org=(20, 80),
                                 fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.6,
                                 color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
+            frame = cv2.putText(img=frame, text=f"gx: {round(self.veh_state_streamer.gyro.x, 3)}, "
+                                                f"gy: {round(self.veh_state_streamer.gyro.y, 3)}, "
+                                                f"gz: {round(self.veh_state_streamer.gyro.z, 3)}", org=(20, 100),
+                                fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.6,
+                                color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
+
 
             frame = cv2.putText(img=frame,
                                 text=f"{self.control_streamer.control_tx} | "
