@@ -72,12 +72,16 @@ class ManualControl:
                 elif hori < 0:
                     self.steering_offset = np.clip(self.steering_offset - self.gear_steering_step, -1, 1)
                     self.ios_config.steering_offset = self.steering_offset
-
-
         if self.use_joystick:
             self.throttle, self.steering = self._parse_joystick()
         else:
             self.throttle, self.steering = self._parse_vehicle_keys(key_pressed)
+            if key_pressed[K_UP]:
+                self.vertical_view_offset = min(500, self.vertical_view_offset + 5)
+            elif key_pressed[K_DOWN]:
+                self.vertical_view_offset = max(0, self.vertical_view_offset - 5)
+            if key_pressed[K_SPACE]:
+                return True, VehicleControl(brake=True)
 
         return True, VehicleControl(throttle=np.clip(self.throttle, -self.max_throttle, self.max_throttle),
                                     steering=np.clip(self.steering, -self.max_steering, self.max_steering))
@@ -126,18 +130,18 @@ class ManualControl:
         Returns:
             None
         """
-        if keys[K_UP] or keys[K_w]:
+        if keys[K_w]:
             self.throttle = min(self.throttle + self._throttle_increment, 1)
 
-        elif keys[K_DOWN] or keys[K_s]:
+        elif keys[K_s]:
             self.throttle = max(self.throttle - self._throttle_increment, -1)
         else:
             self.throttle = 0
 
-        if keys[K_LEFT] or keys[K_a]:
+        if keys[K_a]:
             self.steering = max(self.steering - self._steering_increment, -1)
 
-        elif keys[K_RIGHT] or keys[K_d]:
+        elif keys[K_d]:
             self.steering = min(self.steering + self._steering_increment, 1)
         else:
             self.steering = 0

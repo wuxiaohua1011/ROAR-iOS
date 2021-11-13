@@ -16,7 +16,7 @@ import numpy as np
 import cv2
 import time
 from ROAR_iOS.veh_state_streamer import VehicleStateStreamer
-
+from ROAR_iOS.brake import Brake
 
 class iOSRunner:
     def __init__(self, agent: Agent, ios_config: iOSConfig):
@@ -92,6 +92,8 @@ class iOSRunner:
         self.steering_smoothen_factor_backward = 10
         self.throttle_smoothen_factor = 100
 
+        self.braker = Brake(kp=0.1, kd=0, ki=0)
+
         self.logger.info("iOS Runner Initialized")
 
     def setup_pygame(self):
@@ -134,6 +136,9 @@ class iOSRunner:
                     self.smoothen_control(control)
                 if self.ios_config.invert_steering:
                     control.steering = -1 * control.steering
+                if control.brake:
+                    control = self.braker.run_step(control=control, vehicle=vehicle)
+                print(control)
                 self.control_streamer.send(control)
 
         except Exception as e:
@@ -193,7 +198,8 @@ class iOSRunner:
 
     def on_finish(self):
         self.logger.info("Finishing...")
-        self.control_streamer.send(VehicleControl())
+        for i in range(10):
+            self.control_streamer.send(VehicleControl())
         self.agent.shutdown_module_threads()
 
     def update_pygame(self, clock) -> Tuple[bool, VehicleControl]:
