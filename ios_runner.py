@@ -92,7 +92,7 @@ class iOSRunner:
         self.steering_smoothen_factor_backward = 10
         self.throttle_smoothen_factor = 100
 
-        self.braker = Brake(kp=0.1, kd=0, ki=0)
+        self.braker = Brake(kp=0.01, kd=0, ki=0, k_incline=0.01)
 
         self.logger.info("iOS Runner Initialized")
 
@@ -138,7 +138,6 @@ class iOSRunner:
                     control.steering = -1 * control.steering
                 if control.brake:
                     control = self.braker.run_step(control=control, vehicle=vehicle)
-                print(control)
                 self.control_streamer.send(control)
 
         except Exception as e:

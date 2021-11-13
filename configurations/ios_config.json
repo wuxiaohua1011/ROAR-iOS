@@ -7,7 +7,7 @@
     "control_route_name": "control",
     "depth_cam_route_name": "world_cam_depth",
     "ar_mode": false,
-    "max_throttle": 0.3,
+    "max_throttle": 0.25,
     "max_steering": 1.0,
     "steering_offset": 0.15,
     "invert_steering": false,
