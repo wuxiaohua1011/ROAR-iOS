@@ -47,6 +47,7 @@ class iOSRunner:
                                                        port=8003,
                                                        name="VehicleStateStreamer",
                                                        update_interval=0.05,
+                                                       max_vel_buffer=5,
                                                        threaded=True)
         self.control_streamer = ControlStreamer(ios_address=self.ios_config.ios_ip_addr,
                                                 port=8004,

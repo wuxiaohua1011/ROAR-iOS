@@ -8,15 +8,21 @@ import time
 sys.path.append(Path(os.getcwd()).parent.as_posix())
 from ROAR_iOS.udp_receiver import UDPStreamer
 from ROAR.utilities_module.data_structures_models import Transform, Vector3D
+from collections import deque
 
 
 class VehicleStateStreamer(UDPStreamer):
-    def __init__(self, **kwargs):
+    def __init__(self, max_vel_buffer=5, **kwargs):
         super().__init__(**kwargs)
         self.transform = Transform()
         self.velocity = Vector3D()
         self.acceleration = Vector3D()
         self.gyro = Vector3D()
+
+        self.max_vel_buffer = max_vel_buffer
+        self.vx_deque = deque(maxlen=self.max_vel_buffer)
+        self.vy_deque = deque(maxlen=self.max_vel_buffer)
+        self.vz_deque = deque(maxlen=self.max_vel_buffer)
 
     def run_in_series(self, **kwargs):
         try:
@@ -31,9 +37,14 @@ class VehicleStateStreamer(UDPStreamer):
             self.transform.rotation.roll = d[3]
             self.transform.rotation.pitch = d[4]
             self.transform.rotation.yaw = d[5]
-            self.velocity.x = d[6]
-            self.velocity.y = d[7]
-            self.velocity.z = d[8]
+
+            self.vx_deque.append(d[6])
+            self.vy_deque.append(d[7])
+            self.vz_deque.append(d[8])
+
+            self.velocity.x = np.average(self.vx_deque)
+            self.velocity.y = np.average(self.vy_deque)
+            self.velocity.z = np.average(self.vz_deque)
             self.acceleration.x = d[9]
             self.acceleration.y = d[10]
             self.acceleration.z = d[11]
