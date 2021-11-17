@@ -24,6 +24,8 @@ class VehicleStateStreamer(UDPStreamer):
         self.vy_deque = deque(maxlen=self.max_vel_buffer)
         self.vz_deque = deque(maxlen=self.max_vel_buffer)
 
+        self.recv_time: float = 0
+
     def run_in_series(self, **kwargs):
         try:
             data = self.recv()
@@ -38,19 +40,22 @@ class VehicleStateStreamer(UDPStreamer):
             self.transform.rotation.pitch = d[4]
             self.transform.rotation.yaw = d[5]
 
-            self.vx_deque.append(d[6])
-            self.vy_deque.append(d[7])
-            self.vz_deque.append(d[8])
+            # self.vx_deque.append(d[6])
+            # self.vy_deque.append(d[7])
+            # self.vz_deque.append(d[8])
 
-            self.velocity.x = np.average(self.vx_deque)
-            self.velocity.y = np.average(self.vy_deque)
-            self.velocity.z = np.average(self.vz_deque)
+            self.velocity.x = d[6] #np.average(self.vx_deque)
+            self.velocity.y = d[7]#np.average(self.vy_deque)
+            self.velocity.z = d[8]#np.average(self.vz_deque)
+
             self.acceleration.x = d[9]
             self.acceleration.y = d[10]
             self.acceleration.z = d[11]
             self.gyro.x = d[12]
             self.gyro.y = d[13]
             self.gyro.z = d[14]
+
+            self.recv_time = d[15]
 
         except Exception as e:
             self.logger.error(e)
