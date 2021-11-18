@@ -145,11 +145,11 @@ uint16_t read_rc_controller(int pin){
 void ensureSmoothBackTransition() {
   if (isForwardState and latest_throttle < 1500) {
     writeToServo(1500, latest_steering);
-    delay(100);
+    delay(150);
     writeToServo(1450, latest_steering);
     delay(100);
     writeToServo(1500,latest_steering);
-    delay(100);
+    delay(150);
     isForwardState = false;
   } else if (latest_throttle >= 1500) {
     isForwardState = true;
