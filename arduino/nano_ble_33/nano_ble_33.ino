@@ -199,7 +199,7 @@ void parseSerialData() {
         if (token[0] == HANDSHAKE_START) {
           if (token != NULL) {
             unsigned int curr_throttle_read = atoi(token + 1);
-            if (curr_throttle_read >= 1000 and curr_throttle_read <= 2000) {
+            if (curr_throttle_read > 1000 and curr_throttle_read < 2000) {
               latest_throttle = curr_throttle_read;
             }
           }
