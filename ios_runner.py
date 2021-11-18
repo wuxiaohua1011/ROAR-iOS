@@ -93,7 +93,7 @@ class iOSRunner:
         self.steering_smoothen_factor_backward = 10
         self.throttle_smoothen_factor = 100
 
-        self.braker = Brake(kp=0.01, kd=0, ki=0, k_incline=0.01, max_brake=0.2)
+        self.braker = Brake(kp=0.01, kd=0, ki=0, k_incline=0.015, max_brake=0.2)
 
         self.logger.info("iOS Runner Initialized")
 
