@@ -39,9 +39,10 @@ class RGBCamStreamer(UDPStreamer):
 
             img = np.frombuffer(img_data, dtype=np.uint8)
             img = cv2.imdecode(img, cv2.IMREAD_UNCHANGED)
+
+
             if img is not None:
                 self.curr_image = img
-
         except OSError:
             self.should_continue_threaded = False
 
@@ -49,8 +50,9 @@ class RGBCamStreamer(UDPStreamer):
             self.logger.error(e)
 
 
+
 if __name__ == '__main__':
-    ir_image_server = RGBCamStreamer(ios_address="10.0.0.26",
+    ir_image_server = RGBCamStreamer(ios_address="192.168.1.2",
                                      pc_port=8001,
                                      name="world_rgb_streamer",
                                      update_interval=0.025,

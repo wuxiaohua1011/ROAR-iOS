@@ -9,7 +9,8 @@ sys.path.append(Path(os.getcwd()).parent.as_posix())
 from ROAR.utilities_module.module import Module
 from ROAR.utilities_module.utilities import get_ip
 from collections import defaultdict
-
+from collections import deque
+import numpy as np
 MAX_DGRAM = 9620
 
 
@@ -94,6 +95,7 @@ class UDPStreamer(Module):
                     data = b''
                     for k in sorted(log.keys()):
                         data += log[k]
+
                     return data
             except socket.timeout as e:
                 # if socket times out
@@ -109,7 +111,7 @@ class UDPStreamer(Module):
 
     def start_socket(self):
         self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.s.settimeout(0.1)
+        self.s.settimeout(0.05)
 
     def _send_data(self, data: str):
         try:
