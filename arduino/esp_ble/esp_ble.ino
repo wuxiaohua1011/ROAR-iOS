@@ -104,7 +104,7 @@ void loop() {
   }
 
   
-  ensureSmoothBackTransition();
+//  ensureSmoothBackTransition();
   writeToServo(ws_throttle_read, ws_steering_read);
 
 }
