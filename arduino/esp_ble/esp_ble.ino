@@ -47,7 +47,13 @@ class MyCallbacks: public BLECharacteristicCallbacks {
             if (token != NULL) {
               unsigned int curr_throttle_read = atoi(token + 1);
               if (curr_throttle_read >= 1000 and curr_throttle_read <= 2000) {
-                ws_throttle_read = curr_throttle_read;
+                if (curr_throttle_read == 1500) {
+                    ws_throttle_read = 1510;
+
+                } else {
+                    ws_throttle_read = curr_throttle_read;
+
+                }
               } 
             }
             token = strtok(NULL, ",");
@@ -104,7 +110,7 @@ void loop() {
   }
 
   
-//  ensureSmoothBackTransition();
+  ensureSmoothBackTransition();
   writeToServo(ws_throttle_read, ws_steering_read);
 
 }
@@ -147,7 +153,8 @@ void setupServo() {
 }
 
 void writeToServo(unsigned int throttle, unsigned int steering) {
-  checkServo(); // prevent servo from detaching
+//  checkServo(); // prevent servo from detaching
+  
   latest_throttle = throttle;
   latest_steering = steering;
 
@@ -176,11 +183,11 @@ void checkServo() {
 void ensureSmoothBackTransition() {
   if (isForwardState and latest_throttle < 1500) {
     writeToServo(1500, latest_steering);
-    delay(100);
-    writeToServo(1000, latest_steering);
-    delay(100);
+    delay(150);
+    writeToServo(1450, latest_steering);
+    delay(150);
     writeToServo(1500,latest_steering);
-    delay(100);
+    delay(150);
     isForwardState = false;
   } else if (latest_throttle >= 1500) {
     isForwardState = true;

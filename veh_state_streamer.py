@@ -32,7 +32,6 @@ class VehicleStateStreamer(UDPStreamer):
             if data is None:
                 return
             d = [float(s) for s in data.decode('utf-8').split(",")]
-            print(d[6:9])
             # d = np.frombuffer(data, dtype=np.float32)
             self.transform.location.x = d[0]
             self.transform.location.y = d[1]
@@ -45,7 +44,7 @@ class VehicleStateStreamer(UDPStreamer):
             self.vy_deque.append(d[7])
             self.vz_deque.append(d[8])
 
-            self.velocity.x = np.average(self.vx_deque)#d[6] #np.average(self.vx_deque)
+            self.velocity.x = np.average(self.vx_deque) #d[6] #np.average(self.vx_deque)
             self.velocity.y = np.average(self.vy_deque) #d[7]#np.average(self.vy_deque)
             self.velocity.z = np.average(self.vz_deque) #d[8]#np.average(self.vz_deque)
 

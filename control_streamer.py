@@ -28,8 +28,12 @@ class ControlStreamer(UDPStreamer):
 
 if __name__ == '__main__':
     cs = ControlStreamer(pc_port=8004,
+                         ios_address="192.168.1.3",
                          threaded=False,
                          name="control_streamer")
-    cs.connect()
+    # cs.connect()
     while True:
-        cs.send(VehicleControl(throttle=1, steering=1))
+        start = time.perf_counter()
+        cs.send(VehicleControl(throttle=0.2, steering=0))
+        end = time.perf_counter()
+        print(end - start)
