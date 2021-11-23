@@ -404,6 +404,9 @@ void vehicleControllerCharacteristicWritten(BLEDevice central, BLECharacteristic
     if (token != NULL) {
       unsigned int curr_throttle_read = atoi(token + 1);
       if (curr_throttle_read >= 1000 and curr_throttle_read <= 2000) {
+        if (curr_throttle_read == 1500) { 
+          curr_throttle_read = 1510;
+        }
         bluetooth_throttle_read = curr_throttle_read;
       }
     }
