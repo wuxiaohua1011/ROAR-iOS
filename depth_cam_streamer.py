@@ -31,8 +31,8 @@ class DepthCamStreamer(UDPStreamer):
                              struct.unpack('f', intrinsics[8:12])[0], \
                              struct.unpack('f', intrinsics[12:16])[0]
             self.intrinsics = np.array([
-                [fx, 0, cx],
-                [0, fy, cy],
+                [fx, 0, cy],
+                [0, fy, cx],
                 [0, 0, 1]
             ])
             img = np.frombuffer(img_data, dtype=np.float32)
