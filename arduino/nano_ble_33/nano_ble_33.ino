@@ -121,10 +121,12 @@ void loop()
       latest_steering = controller_steering_read;
   } else if (jetson_controller_state == true) {
       parseSerialData();
+      Serial.println("Using Jetson data");
   } else if (bluetooth_controller_state == true) {
       latest_throttle = bluetooth_throttle_read; // done in vehicleControllerCharacteristicWritten call back handler
       latest_steering = bluetooth_steering_read; // done in vehicleControllerCharacteristicWritten call back handler
-  } else {
+  } 
+  else {
     latest_throttle = NEUTRAL_THROTTLE;
     latest_steering = NEUTRAL_STEERING;
   }
@@ -189,7 +191,6 @@ void parseSerialData() {
       For example, by default, HANDSHAKE_START= "(", HANDSHAKE_END=")"
       Then a sample receivedData could be (1500,1500)
   */
-    do {
         char buf[20];
         size_t num_read = Serial.readBytesUntil(HANDSHAKE_END, buf, 20);
         char *token = strtok(buf, ",");
@@ -208,7 +209,36 @@ void parseSerialData() {
             }
           }
         }
-    } while(Serial.available() > 0);
+        Serial.print("Read in: ");
+        Serial.print(latest_throttle);
+        Serial.print(" ");
+        Serial.println(latest_steering);
+//    do {
+//        char buf[20];
+//        size_t num_read = Serial.readBytesUntil(HANDSHAKE_END, buf, 20);
+//        char *token = strtok(buf, ",");
+//        if (token[0] == HANDSHAKE_START) {
+//          if (token != NULL) {
+//            unsigned int curr_throttle_read = atoi(token + 1);
+//            if (curr_throttle_read > 1000 and curr_throttle_read < 2000) {
+//              latest_throttle = curr_throttle_read;
+//            }
+//          }
+//          token = strtok(NULL, ",");
+//          if (token != NULL) {
+//            unsigned int curr_steering_read = atoi(token);
+//            if (curr_steering_read >= 1000 and curr_steering_read <= 2000) {
+//              latest_steering = curr_steering_read;
+//            }
+//          }
+//        }
+//        Serial.print("Read in: ");
+//        Serial.print(latest_throttle);
+//        Serial.print(" ");
+//        Serial.println(latest_steering);
+//        
+//    } while(Serial.available() > 0);
+    Serial.println("Serial data parsed");
 }
 bool determineJetsonControllerConnected() {
   /*

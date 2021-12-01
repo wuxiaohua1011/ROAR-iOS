@@ -40,6 +40,8 @@ class ManualControl:
 
         self.steering = 0.0
         self.throttle = 0.0
+
+        self.last_switch_press_time = time.get_ticks()
         self.logger.debug("Keyboard Control Initiated")
 
     def parse_events(self, clock: pygame.time.Clock):
@@ -86,9 +88,9 @@ class ManualControl:
                 self.vertical_view_offset = max(0, self.vertical_view_offset - 5)
             if key_pressed[K_SPACE]:
                 is_brake = True
-
-        if key_pressed[K_m]:
+        if key_pressed[K_m] and time.get_ticks() - self.last_switch_press_time > 100:
             is_switch_auto_pressed = True
+            self.last_switch_press_time = time.get_ticks()
 
         return True, VehicleControl(throttle=np.clip(self.throttle, self.max_reverse_throttle,
                                                      self.max_forward_throttle),

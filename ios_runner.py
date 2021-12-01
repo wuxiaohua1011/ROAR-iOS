@@ -18,9 +18,11 @@ import time
 from ROAR_iOS.veh_state_streamer import VehicleStateStreamer
 from ROAR_iOS.brake import Brake
 
+
 class iOSRunner:
     def __init__(self, agent: Agent, ios_config: iOSConfig):
         self.agent = agent
+        self.is_auto = False
         self.ios_config = ios_config
         self.ios_bridge = iOSBridge()
         self.pygame_display_width = self.ios_config.pygame_display_width
@@ -110,6 +112,7 @@ class iOSRunner:
         self.logger.debug("PyGame initiated")
 
     def start_game_loop(self, auto_pilot=False):
+        self.is_auto = auto_pilot
         self.logger.info("Starting Game loop")
         try:
             clock = pygame.time.Clock()
@@ -123,12 +126,11 @@ class iOSRunner:
                 clock.tick_busy_loop(60)
                 should_continue, control, is_manual_toggled = self.update_pygame(clock=clock)
                 if is_manual_toggled:
-                    auto_pilot = ~auto_pilot
-
+                    self.is_auto = False if self.is_auto else True
                 sensor_data, vehicle = self.convert_data()
                 agent_control = self.agent.run_step(vehicle=vehicle,
                                                     sensors_data=sensor_data)
-                if auto_pilot:
+                if self.is_auto:
                     control = self.ios_bridge.convert_control_from_agent_to_source(agent_control)
 
                 if self.should_smoothen_control:
@@ -205,7 +207,7 @@ class iOSRunner:
             self.control_streamer.send(VehicleControl())
         self.agent.shutdown_module_threads()
 
-    def update_pygame(self, clock) -> Tuple[bool, VehicleControl]:
+    def update_pygame(self, clock) -> Tuple[bool, VehicleControl, bool]:
         """
         Update the pygame window, including parsing keypress
         Args:
@@ -281,9 +283,8 @@ class iOSRunner:
                                 fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.6,
                                 color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
 
-
             frame = cv2.putText(img=frame,
-                                text=f"{self.control_streamer.control_tx}",
+                                text=f"Auto = {self.is_auto} | {self.control_streamer.control_tx}",
                                 org=(20, frame.shape[0] - 20), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.6,
                                 color=(0, 255, 0),  # BGR
                                 thickness=1, lineType=cv2.LINE_AA)

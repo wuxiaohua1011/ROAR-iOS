@@ -20,6 +20,7 @@ class Brake:
             # velx = vehicle.velocity.x
             # velz = vehicle.velocity.z
             #
+            #
             # v_vec = np.array([-np.sin(np.deg2rad(vehicle.transform.rotation.yaw)),
             #                   0,
             #                   -np.cos(np.deg2rad(vehicle.transform.rotation.yaw))])
@@ -33,14 +34,15 @@ class Brake:
             # forward_error = np.arccos(v_vec_normed @ w_vec_normed.T)
             # _cross = np.cross(v_vec_normed, w_vec_normed)
             # forward_error = np.rad2deg(forward_error)
-            # # print(_cross)
-            # # if _cross[1] > 0:
-            # #     forward_error *= -1
-            # # print(forward_error)
-            # # forward_error = forward_error % 360
+            # if _cross[1] > 0:
+            #     forward_error *= -1
+            # forward_error = forward_error % 360
+            # e = 0 - vehicle.get_speed(vehicle)
+            # e = 0 if -4 < e < 4 else e
+            # is_forward = True if 270 < forward_error < 360 or 0 < forward_error < 90 else False  # TODO fix this.
             e = 0 - vehicle.get_speed(vehicle)
+            is_forward = vehicle.velocity.x + vehicle.velocity.z < 0
 
-            is_forward = True  # TODO fix this.
             neutral = -90
             incline = vehicle.transform.rotation.pitch - neutral
             e = e if is_forward else e * -1
@@ -50,7 +52,7 @@ class Brake:
             ie = 0 if len(self.error_deque) < 2 else np.sum(self.error_deque)
             incline = np.clip(incline, -18, 18)
             control.throttle = np.clip(self.kp * e + self.kd * de + self.ki * ie + self.k_incline * incline,
-                                       -abs(self.max_brake),
+                                       -0.1,
                                        abs(self.max_brake))
             return control
         else:
