@@ -93,7 +93,7 @@ class iOSRunner:
         self.steering_smoothen_factor_backward = 10
         self.throttle_smoothen_factor = 100
 
-        self.braker = Brake(kp=0.01, kd=0, ki=0, k_incline=0.015, max_brake=0.2)
+        self.braker = Brake(kp=0.01, kd=0, ki=0, k_incline=0.015, max_brake=0.16)
 
         self.logger.info("iOS Runner Initialized")
 
@@ -121,24 +121,27 @@ class iOSRunner:
             self.agent.start_module_threads()
             while should_continue:
                 clock.tick_busy_loop(60)
-                should_continue, control = self.update_pygame(clock=clock)
+                should_continue, control, is_manual_toggled = self.update_pygame(clock=clock)
+                if is_manual_toggled:
+                    auto_pilot = ~auto_pilot
+
                 sensor_data, vehicle = self.convert_data()
                 agent_control = self.agent.run_step(vehicle=vehicle,
                                                     sensors_data=sensor_data)
                 if auto_pilot:
                     control = self.ios_bridge.convert_control_from_agent_to_source(agent_control)
 
-                control.throttle = np.clip(control.throttle, -self.ios_config.max_throttle,
-                                           self.ios_config.max_throttle)
-                control.steering = np.clip(control.steering + self.ios_config.steering_offset,
-                                           -self.ios_config.max_steering,
-                                           self.ios_config.max_steering)
                 if self.should_smoothen_control:
                     self.smoothen_control(control)
                 if self.ios_config.invert_steering:
                     control.steering = -1 * control.steering
                 if control.brake:
                     control = self.braker.run_step(control=control, vehicle=vehicle)
+                control.throttle = np.clip(control.throttle, self.ios_config.max_reverse_throttle,
+                                           self.ios_config.max_forward_throttle)
+                control.steering = np.clip(control.steering + self.ios_config.steering_offset,
+                                           -self.ios_config.max_steering,
+                                           self.ios_config.max_steering)
                 self.control_streamer.send(control)
 
         except Exception as e:
@@ -280,9 +283,7 @@ class iOSRunner:
 
 
             frame = cv2.putText(img=frame,
-                                text=f"{self.control_streamer.control_tx} | "
-                                     f"max_throttle = {round(self.ios_config.max_throttle, 3)} | "
-                                     f"max_steering = {round(self.ios_config.max_steering, 3)}",
+                                text=f"{self.control_streamer.control_tx}",
                                 org=(20, frame.shape[0] - 20), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.6,
                                 color=(0, 255, 0),  # BGR
                                 thickness=1, lineType=cv2.LINE_AA)

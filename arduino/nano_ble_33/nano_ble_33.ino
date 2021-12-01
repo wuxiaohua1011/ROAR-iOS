@@ -114,9 +114,6 @@ void loop()
   } else {
     turnOnLED();
   }
-  Serial.print(rc_controller_state);
-  Serial.print(jetson_controller_state);
-  Serial.print(bluetooth_controller_state);
 
   if (rc_controller_state == true) {
 //      uint16_t t = read_rc_controller(THROTTLE_IN_PIN);
@@ -144,12 +141,12 @@ uint16_t read_rc_controller(int pin){
 
 void ensureSmoothBackTransition() {
   if (isForwardState and latest_throttle < 1500) {
-    writeToServo(1500, latest_steering);
-    delay(150);
-    writeToServo(1450, latest_steering);
+    writeToServo(1510, latest_steering);
     delay(100);
-    writeToServo(1500,latest_steering);
-    delay(150);
+    writeToServo(1449, latest_steering);
+    delay(100);
+    writeToServo(1510,latest_steering);
+    delay(100);
     isForwardState = false;
   } else if (latest_throttle >= 1500) {
     isForwardState = true;
@@ -279,13 +276,13 @@ void checkServo() {
 
 void writeToServo(unsigned int throttle, unsigned int steering) {
   // prevent servo from detaching
-  checkServo();
-  latest_throttle = throttle;
-  latest_steering = steering;
-
-  servoThrottle.writeMicroseconds(latest_throttle);
-  servoSteering.writeMicroseconds(latest_steering);
-  writeToSerial(latest_throttle, latest_steering);
+//  checkServo();
+    latest_throttle = throttle;
+    latest_steering = steering;
+  
+    servoThrottle.writeMicroseconds(latest_throttle);
+    servoSteering.writeMicroseconds(latest_steering);
+    writeToSerial(latest_throttle, latest_steering);
 }
 
 void writeToSerial(unsigned int throttle, unsigned int steering) {

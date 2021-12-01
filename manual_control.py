@@ -15,7 +15,8 @@ class ManualControl:
         self.ios_config = ios_config
         self._steering_increment = steering_increment
         self._throttle_increment = throttle_increment
-        self.max_throttle = ios_config.max_throttle
+        self.max_reverse_throttle = ios_config.max_reverse_throttle
+        self.max_forward_throttle = ios_config.max_forward_throttle
         self.max_steering = ios_config.max_steering
 
         self.steering_offset = ios_config.steering_offset
@@ -23,7 +24,7 @@ class ManualControl:
         self.gear_throttle_step = 0.05
         self.gear_steering_step = 0.05
 
-        self.vertical_view_offset = 0
+        self.vertical_view_offset = 200
 
         self.left_trigger = 0
         self.right_trigger = 0
@@ -55,15 +56,15 @@ class ManualControl:
         key_pressed = pygame.key.get_pressed()
         for event in events:
             if event.type == pygame.QUIT or key_pressed[K_q] or key_pressed[K_ESCAPE]:
-                return False, VehicleControl()
+                return False, VehicleControl(), False
             if event.type == pygame.JOYHATMOTION:
                 hori, vert = self.joystick.get_hat(0)
                 if vert > 0:
-                    self.max_throttle = np.clip(self.max_throttle + self.gear_throttle_step, 0, 1)
-                    self.ios_config.max_throttle = self.max_throttle
+                    self.max_forward_throttle = np.clip(self.max_forward_throttle + self.gear_throttle_step, 0, 1)
+                    self.ios_config.max_forward_throttle = self.max_forward_throttle
                 elif vert < 0:
-                    self.max_throttle = np.clip(self.max_throttle - self.gear_throttle_step, 0, 1)
-                    self.ios_config.max_throttle = self.max_throttle
+                    self.max_forward_throttle = np.clip(self.max_forward_throttle - self.gear_throttle_step, 0, 1)
+                    self.ios_config.max_forward_throttle = self.max_forward_throttle
 
                 if hori > 0:
                     self.steering_offset = np.clip(self.steering_offset + self.gear_steering_step, -1, 1)
@@ -72,6 +73,9 @@ class ManualControl:
                 elif hori < 0:
                     self.steering_offset = np.clip(self.steering_offset - self.gear_steering_step, -1, 1)
                     self.ios_config.steering_offset = self.steering_offset
+
+        is_brake = False
+        is_switch_auto_pressed = False
         if self.use_joystick:
             self.throttle, self.steering = self._parse_joystick()
         else:
@@ -81,10 +85,15 @@ class ManualControl:
             elif key_pressed[K_DOWN]:
                 self.vertical_view_offset = max(0, self.vertical_view_offset - 5)
             if key_pressed[K_SPACE]:
-                return True, VehicleControl(brake=True)
+                is_brake = True
 
-        return True, VehicleControl(throttle=np.clip(self.throttle, -self.max_throttle, self.max_throttle),
-                                    steering=np.clip(self.steering, -self.max_steering, self.max_steering))
+        if key_pressed[K_m]:
+            is_switch_auto_pressed = True
+
+        return True, VehicleControl(throttle=np.clip(self.throttle, self.max_reverse_throttle,
+                                                     self.max_forward_throttle),
+                                    steering=np.clip(self.steering, -self.max_steering, self.max_steering),
+                                    brake=is_brake), is_switch_auto_pressed
 
     def _parse_joystick(self) -> Tuple[float, float]:
         # code to test which axis is your controller using
