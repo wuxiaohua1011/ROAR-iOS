@@ -40,7 +40,6 @@ class RGBCamStreamer(UDPStreamer):
             img = np.frombuffer(img_data, dtype=np.uint8)
             img = cv2.imdecode(img, cv2.IMREAD_UNCHANGED)
 
-
             if img is not None:
                 self.curr_image = img
         except OSError:

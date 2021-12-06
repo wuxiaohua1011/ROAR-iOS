@@ -51,8 +51,8 @@ class VehicleStateStreamer(UDPStreamer):
             self.acceleration.x = d[9]
             self.acceleration.y = d[10]
             self.acceleration.z = d[11]
-            self.gyro.x = d[12]
-            self.gyro.y = d[13]
+            self.gyro.x = d[13]
+            self.gyro.y = d[12]
             self.gyro.z = d[14]
 
             self.recv_time = d[15]
