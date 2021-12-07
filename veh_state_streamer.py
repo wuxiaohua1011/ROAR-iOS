@@ -25,7 +25,6 @@ class VehicleStateStreamer(UDPStreamer):
         self.vz_deque = deque(maxlen=self.max_vel_buffer)
 
         self.recv_time: float = 0
-
     def run_in_series(self, **kwargs):
         try:
             data = self.recv()
@@ -44,9 +43,9 @@ class VehicleStateStreamer(UDPStreamer):
             self.vy_deque.append(d[7])
             self.vz_deque.append(d[8])
 
-            self.velocity.x = np.average(self.vx_deque) #d[6] #np.average(self.vx_deque)
-            self.velocity.y = np.average(self.vy_deque) #d[7]#np.average(self.vy_deque)
-            self.velocity.z = np.average(self.vz_deque) #d[8]#np.average(self.vz_deque)
+            self.velocity.x = np.average(self.vx_deque)  # d[6] #np.average(self.vx_deque)
+            self.velocity.y = np.average(self.vy_deque)  # d[7]#np.average(self.vy_deque)
+            self.velocity.z = np.average(self.vz_deque)  # d[8]#np.average(self.vz_deque)
 
             self.acceleration.x = d[9]
             self.acceleration.y = d[10]
