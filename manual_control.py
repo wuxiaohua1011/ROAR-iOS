@@ -22,7 +22,7 @@ class ManualControl:
         self.steering_offset = ios_config.steering_offset
 
         self.gear_throttle_step = 0.05
-        self.gear_steering_step = 0.05
+        self.gear_steering_step = 0.01
 
         self.vertical_view_offset = 200
 
@@ -78,6 +78,8 @@ class ManualControl:
 
         is_brake = False
         is_switch_auto_pressed = False
+        self.throttle, self.steering = self._parse_vehicle_keys(key_pressed)
+
         if self.use_joystick:
             self.throttle, self.steering = self._parse_joystick()
         else:
@@ -92,10 +94,11 @@ class ManualControl:
             is_switch_auto_pressed = True
             self.last_switch_press_time = time.get_ticks()
 
-        return True, VehicleControl(throttle=np.clip(self.throttle, self.max_reverse_throttle,
-                                                     self.max_forward_throttle),
-                                    steering=np.clip(self.steering, -self.max_steering, self.max_steering),
-                                    brake=is_brake), is_switch_auto_pressed
+        control = VehicleControl(throttle=np.clip(self.throttle, self.max_reverse_throttle,
+                                                  self.max_forward_throttle),
+                                 steering=np.clip(self.steering, -self.max_steering, self.max_steering),
+                                 brake=is_brake)
+        return True, control, is_switch_auto_pressed
 
     def _parse_joystick(self) -> Tuple[float, float]:
         # code to test which axis is your controller using
@@ -157,4 +160,10 @@ class ManualControl:
         else:
             self.steering = 0
 
+        if keys[K_LEFT]:
+            self.steering_offset = np.clip(self.steering_offset - self.gear_steering_step, -1, 1)
+            self.ios_config.steering_offset = self.steering_offset
+        elif keys[K_RIGHT]:
+            self.steering_offset = np.clip(self.steering_offset + self.gear_steering_step, -1, 1)
+            self.ios_config.steering_offset = self.steering_offset
         return round(self.throttle, 5), round(self.steering, 5)
