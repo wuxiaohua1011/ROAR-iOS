@@ -72,31 +72,45 @@ class UDPStreamer(Module):
                 prefix_num = int(seg[0:3].decode('ascii'))
                 total_num = int(seg[3:6].decode('ascii'))
                 curr_buffer = int(seg[6:9].decode('ascii'))
-                if buffer_num == -1:
-                    # initializing receiving sequence
-                    buffer_num = curr_buffer
-                    if prefix_num != 0:
-                        # if the first one is not the starting byte, dump it.
-                        buffer_num = -1
-                        log = dict()
-                    else:
-                        # if the first one is the starting byte, start recording
-                        log[prefix_num] = seg[9:]
+                if prefix_num in log:
+                    # if i received a frame from another sequence
+                    buffer_num = -1
+                    log = dict()
                 else:
-                    if prefix_num in log:
-                        # if i received a frame from another sequence
-                        buffer_num = -1
-                        log = dict()
-                    else:
-                        # if all checks passed, add it to the running recording of the data.
-                        log[prefix_num] = seg[9:]
-
+                    # if all checks passed, add it to the running recording of the data.
+                    log[prefix_num] = seg[9:]
                 if len(log) - 1 == total_num:
                     data = b''
                     for k in sorted(log.keys()):
                         data += log[k]
 
                     return data
+
+                # if buffer_num == -1:
+                #     # initializing receiving sequence
+                #     buffer_num = curr_buffer
+                #     if prefix_num != 0:
+                #         # if the first one is not the starting byte, dump it.
+                #         buffer_num = -1
+                #         log = dict()
+                #     else:
+                #         # if the first one is the starting byte, start recording
+                #         log[prefix_num] = seg[9:]
+                # else:
+                #     if prefix_num in log:
+                #         # if i received a frame from another sequence
+                #         buffer_num = -1
+                #         log = dict()
+                #     else:
+                #         # if all checks passed, add it to the running recording of the data.
+                #         log[prefix_num] = seg[9:]
+
+                # if len(log) - 1 == total_num:
+                #     data = b''
+                #     for k in sorted(log.keys()):
+                #         data += log[k]
+                #
+                #     return data
             except socket.timeout as e:
                 # if socket times out
                 #   1. due to send ack not received, therefore server not sending data
