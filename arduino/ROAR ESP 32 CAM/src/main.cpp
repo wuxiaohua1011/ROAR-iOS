@@ -8,6 +8,7 @@
 #define SERVICE_UUID        "19B10010-E8F2-537E-4F6C-D104768A1214"
 #define CONTROL_CHAR_UUID "19B10011-E8F2-537E-4F6C-D104768A1214"
 #define VELOCITY_CHAR_UUID "19B10011-E8F2-537E-4F6C-D104768A1215"
+#define PID_KValues_UUID "19B10011-E8F2-537E-4F6C-D104768A1216"
 
 
 
@@ -47,11 +48,18 @@ void writeToServo(unsigned int throttle, unsigned int steering);
 
 class ControlCharCallback: public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *pCharacteristic) {
+      // let's not change this since it might break other people's workign code. 
       std::string value = pCharacteristic->getValue();
       if (value.length() > 0) {
+        // turn buffer into a String object
         String argument = String(value.c_str());
+        // terminate the string
         char buf[value.length()] = "\0";
         argument.toCharArray(buf, argument.length());
+
+        // the input is going to be in the format of (1500, 1500)
+        // so find the delimiter "," and then exclude the first "("
+        // then extract the throttle and steering values
         char *token = strtok(buf, ",");
         if (token[0] == HANDSHAKE_START) {
             if (token != NULL) {
@@ -72,9 +80,34 @@ class ControlCharCallback: public BLECharacteristicCallbacks {
     }
 };
 
+
+class ConfigCharCallback: public BLECharacteristicCallbacks {
+    void onWrite(BLECharacteristic *pCharacteristic) {
+      // We first get values from the buffer
+      std::string value = pCharacteristic->getValue();
+      if (value.length() == 12) {
+        // the value is in little endian, 
+        // Arduino is also in little endian
+        // so 1.00 in hex should be 0x3f80000 in big endian
+        // and we will have received 00 00 08 f3, so we simply map this to a float using the below struct
+        float kp; float kd; float ki;
+
+        union tmp {
+            byte b[4];
+            float fval;
+        } t;
+        t.b[0] = value[0]; t.b[1] = value[1]; t.b[2] = value[2]; t.b[3] = value[3]; kp = t.fval;
+        t.b[0] = value[4]; t.b[1] = value[5]; t.b[2] = value[6]; t.b[3] = value[7]; kd = t.fval;
+        t.b[0] = value[8]; t.b[1] = value[9]; t.b[2] = value[10]; t.b[3] = value[11]; ki = t.fval;
+        // print it out for display
+        Serial.print(kp); Serial.print(","); Serial.print(kd); Serial.print(","); Serial.print(ki); Serial.println();
+      }
+    }
+};
+
 class VelocityCharCallback: public BLECharacteristicCallbacks {
     void onRead(BLECharacteristic *pCharacteristic){
-      float my_velocity_reading = 3.0;
+      float my_velocity_reading = 3.0; // TODO @ADAM, replace here with your actual reading
       pCharacteristic->setValue(my_velocity_reading);
     }
 };
@@ -117,32 +150,33 @@ void loop() {
 
 
 void setupBLE() {
+    // setup ble name and server
     BLEDevice::init("IR Vehicle Control");
     BLEServer *pServer = BLEDevice::createServer();
-  
+    // initialize service
     BLEService *pService = pServer->createService(SERVICE_UUID);
     pServer->setCallbacks(new MyServerCallbacks());
     
+    // add characteristics to our service
     BLECharacteristic *pCharacteristic = pService->createCharacteristic(
                                            CONTROL_CHAR_UUID,
                                            BLECharacteristic::PROPERTY_WRITE | 
-                                           BLECharacteristic::PROPERTY_WRITE_NR
-                                         );
+                                           BLECharacteristic::PROPERTY_WRITE_NR);
     pCharacteristic->setCallbacks(new ControlCharCallback());
 
+    BLECharacteristic *pidChar = pService->createCharacteristic(
+                                           PID_KValues_UUID,
+                                           BLECharacteristic::PROPERTY_WRITE |
+                                           BLECharacteristic::PROPERTY_WRITE_NR);                     
+    pidChar->setCallbacks(new ConfigCharCallback());
+
     BLECharacteristic *vCharacteristic = pService->createCharacteristic(
-        VELOCITY_CHAR_UUID,
-        BLECharacteristic::PROPERTY_READ    
-    );
+                                            VELOCITY_CHAR_UUID,
+                                            BLECharacteristic::PROPERTY_READ);
     vCharacteristic->setCallbacks(new VelocityCharCallback());
 
+    // start advertising
     pService->start();
-  
-//    BLEAdvertising *pAdvertising = pServer->getAdvertising();
-//    pAdvertising->setMinPreferred(0x06);  // functions that help with iPhone connections issue
-//    pAdvertising->setMinPreferred(0x12);
-//    pAdvertising->start();
-
     BLEDevice::startAdvertising();
 
     Serial.println("BLE Device Started");
