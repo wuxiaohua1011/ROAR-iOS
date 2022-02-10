@@ -24,7 +24,10 @@ class VehicleStateStreamer(UDPStreamer):
         self.vy_deque = deque(maxlen=self.max_vel_buffer)
         self.vz_deque = deque(maxlen=self.max_vel_buffer)
 
+        self.hall_effect_sensor_velocity: float = 0
+
         self.recv_time: float = 0
+
     def run_in_series(self, **kwargs):
         try:
             data = self.recv()
@@ -54,7 +57,9 @@ class VehicleStateStreamer(UDPStreamer):
             self.gyro.y = d[12]
             self.gyro.z = d[14]
 
-            self.recv_time = d[15]
+            self.hall_effect_sensor_velocity = d[15]
+
+            self.recv_time = d[16]
 
         except Exception as e:
             self.logger.error(e)

@@ -1,4 +1,4 @@
-from ROAR.utilities_module.data_structures_models import SensorsData
+from ROAR.utilities_module.data_structures_models import SensorsData, Vector3D
 from ROAR.utilities_module.vehicle_models import Vehicle, VehicleControl
 from ROAR.agent_module.agent import Agent
 from ROAR.utilities_module.data_structures_models import Transform
@@ -89,7 +89,7 @@ class iOSRunner:
 
         # smoothen control
         # TODO optimize this smoothening
-        self.should_smoothen_control = False
+        self.should_smoothen_control = True
         self.prev_control = VehicleControl()
         self.steering_smoothen_factor_forward = 100
         self.steering_smoothen_factor_backward = 10
@@ -187,7 +187,7 @@ class iOSRunner:
             vehicle = self.ios_bridge.convert_vehicle_from_source_to_agent(
                 {
                     "transform": self.veh_state_streamer.transform,
-                    "velocity": self.veh_state_streamer.velocity,
+                    "velocity": self.veh_state_streamer.velocity if self.ios_config.use_hall_effect_for_spd else Vector3D(x=0, y=0, z=self.veh_state_streamer.hall_effect_sensor_velocity),
                     "acceleration": self.veh_state_streamer.acceleration
                 }
             )
@@ -203,6 +203,7 @@ class iOSRunner:
 
     def on_finish(self):
         self.logger.info("Finishing...")
+
         for i in range(10):
             self.control_streamer.send(VehicleControl())
         self.agent.shutdown_module_threads()

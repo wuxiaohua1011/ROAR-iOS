@@ -25,3 +25,5 @@ class iOSConfig(BaseModel):
 
     should_use_glove: bool = Field(default=False)
     glove_ip_addr: str = Field(default="192.168.1.30")
+
+    use_hall_effect_for_spd: bool = Field(default=False)

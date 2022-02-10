@@ -4,7 +4,7 @@ import numpy as np
 import sys, os
 from pathlib import Path
 import time
-
+import time
 sys.path.append(Path(os.getcwd()).parent.as_posix())
 from ROAR_iOS.udp_receiver import UDPStreamer
 from ROAR.utilities_module.vehicle_models import VehicleControl
@@ -16,11 +16,13 @@ class ControlStreamer(UDPStreamer):
     def __init__(self, **kwargs):
         super(ControlStreamer, self).__init__(**kwargs)
         self.control_tx = VehicleControl()
+        self.last_send_time = time.time()
 
     def send(self, control: VehicleControl):
         self.control_tx = control
         string_format = f"{control.throttle},{control.steering}"
         self._send_data(string_format)
+
 
     def run_in_series(self, **kwargs):
         pass
